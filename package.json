@@ -1,0 +1,14 @@
+{
+  "name": "html-aggragator",
+  "description": "Aggregate html snippets from other pages.",
+  "license": "Apache-2.0",
+  "version": "0.0.1",
+  "private": false,
+  "main": "index.js",
+  "bin": {
+    "html-aggregator": "bin/html-aggregator"
+  },
+  "dependencies": {
+    "cheerio": "0.22.0"
+  }
+}
