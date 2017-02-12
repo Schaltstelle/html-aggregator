@@ -1,12 +1,12 @@
 {
-  "name": "html-aggragator",
+  "name": "html-aggregator",
   "description": "Aggregate html snippets from other pages.",
   "license": "Apache-2.0",
   "version": "0.0.1",
   "private": false,
   "repository": {
     "type": "git",
-    "url": "https://github.com/nidi3/html-aggragator.git"
+    "url": "https://github.com/nidi3/html-aggregator.git"
   },
   "main": "index.js",
   "bin": {
