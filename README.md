@@ -30,5 +30,5 @@ The variables defined in a template are referenced by the expression`%var%`.
 For every occurrence of `<aggregate url="..." template="..."></aggregate>` in every input file
 - the contents of the given URL is fetched
 - the contents is parsed with the given template
-- `<aggregate>`'s child nodes are replaced with the `output` file having it's variables replaced.
+- `<aggregate>`'s child nodes are replaced with the `output` file having its variables replaced.
      
