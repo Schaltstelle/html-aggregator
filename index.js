@@ -95,6 +95,7 @@ function scrape(url, template) {
         for (let p in template.static) {
             info[p] = template.static[p];
         }
+        info.url = url;
         for (let select in template.css) {
             let val = data(template.css[select]).html();
             if (maxLen > 0 && val && val.length > maxLen) {
