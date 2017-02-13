@@ -9,15 +9,17 @@ Run with `html-aggregator --templateDir=<directory> --output=<file> --maxLen=<nu
 `templateDir` contains json files that define how to extract data from HTML files:
 ````json
 {
-    "title": "header.post-header h1",
-    "content": "article.post-content",
+    "selectors": {
+        "title": "header.post-header h1",
+        "content": "article.post-content"
+    },
     "static": {
         "name": "My Name"
     }
 }
 ````
 
-The values are CSS selectors that are applied to the input HTML files. `static` contains static strings.
+The values in `selectors` are CSS selectors that are applied to the input HTML files. `static` contains static strings.
 
 `output` is a file defining how to render the scraped data:
 ````HTML
