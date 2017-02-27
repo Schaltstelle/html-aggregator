@@ -1,3 +1,7 @@
 #! /usr/bin/env node
 
-require('../index.js');
+switch (process.argv[2]){
+    case 'aggregate': return require('../src/aggregate.js');
+    case 'markdown': return require('../src/markdown.js');
+    default: return require('../src/util').help();
+}
