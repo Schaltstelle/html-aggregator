@@ -6,8 +6,9 @@ const fs = require('fs');
 const fse = require('fs-extra');
 const yaml = require('js-yaml');
 const glob = require('glob');
+const util = require('./util');
 
-const args = require('./util').parseArgs();
+const args = util.parseArgs();
 const inputs = args.args;
 const outputDir = args.opts.outputDir || 'output';
 
@@ -27,17 +28,12 @@ inputs.forEach(input => {
                 } else {
                     let data = yaml.safeLoad(raw.substring(0, split));
                     data.content = marked(raw.substring(split + 5));
-                    let template = fs.readFileSync(data.template, 'utf8');
-                    let variable = /%([a-zA-Z0-9.]+)%/g;
-                    let res;
-                    while ((res = variable.exec(template)) !== null) {
-                        template = template.substring(0, res.index) + data[res[1]] + template.substring(res.index + res[0].length);
-                    }
+                    let output = util.template(fs.readFileSync(data.template, 'utf8'), data);
                     let outParts = path.parse(path.resolve(outputDir, path.relative(input, file)));
                     fse.mkdirsSync(outParts.dir);
                     let ext = path.extname(data.template);
                     let outfile = path.resolve(outParts.dir, outParts.name + ext);
-                    fs.writeFileSync(outfile, template);
+                    fs.writeFileSync(outfile, output);
                     console.log('Wrote       ', chalk.blue(path.relative('.', outfile)));
                 }
             });

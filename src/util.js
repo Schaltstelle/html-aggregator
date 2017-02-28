@@ -1,5 +1,6 @@
 'use strict';
 const chalk = require('chalk');
+const handlebars = require('handlebars');
 
 module.exports = {
     help: function () {
@@ -20,5 +21,9 @@ module.exports = {
             }
         }
         return res;
+    },
+
+    template: function (source, data) {
+        return handlebars.compile(source)(data);
     }
 };

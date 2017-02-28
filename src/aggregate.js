@@ -5,8 +5,9 @@ const fse = require('fs-extra');
 const path = require('path');
 const http = require('http');
 const cheerio = require('cheerio');
+const util=require('./util');
 
-const args = require('./util').parseArgs();
+const args = util.parseArgs();
 const parserDir = args.opts.parserDir || 'aggregator';
 const template = args.opts.template || 'aggregator/template.html';
 const outputDir = args.opts.outputDir || 'output';
@@ -50,7 +51,7 @@ inputs.forEach(file => {
                         for (let i = 0; i < replacements.length; i++) {
                             let rep = replacements[i];
                             rep.with.parity = i % 2 === 0 ? 'even' : 'odd';
-                            input = input.substring(0, rep.from) + replace(templateFile, rep.with) + input.substring(rep.to);
+                            input = input.substring(0, rep.from) + util.template(templateFile, rep.with) + input.substring(rep.to);
                         }
                         let outfile = path.resolve(outputDir, path.basename(file));
                         fse.mkdirsSync(path.dirname(outfile));
@@ -126,13 +127,6 @@ function relativize(href, base) {
         }
     }
     return href;
-}
-
-function replace(input, data) {
-    for (let p in data) {
-        input = input.replace(new RegExp('%' + p + '%', 'g'), data[p]);
-    }
-    return input;
 }
 
 function get(url) {
