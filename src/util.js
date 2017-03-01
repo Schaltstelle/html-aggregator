@@ -1,6 +1,7 @@
 'use strict';
 const chalk = require('chalk');
 const handlebars = require('handlebars');
+const moment = require('moment');
 
 module.exports = {
     help: function () {
@@ -27,3 +28,7 @@ module.exports = {
         return handlebars.compile(source)(data);
     }
 };
+
+handlebars.registerHelper('formatDate', (date, format) => {
+    return moment(date).format(format);
+});
