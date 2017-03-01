@@ -5,7 +5,7 @@ const fse = require('fs-extra');
 const path = require('path');
 const http = require('http');
 const cheerio = require('cheerio');
-const util=require('./util');
+const util = require('./util');
 
 const args = util.parseArgs();
 const parserDir = args.opts.parserDir || 'aggregator';
@@ -50,7 +50,7 @@ inputs.forEach(file => {
                         replacements.sort((a, b) => b.from - a.from);
                         for (let i = 0; i < replacements.length; i++) {
                             let rep = replacements[i];
-                            rep.with.parity = i % 2 === 0 ? 'even' : 'odd';
+                            rep.with.parity = (replacements.length - i) % 2 === 1 ? 'even' : 'odd';
                             input = input.substring(0, rep.from) + util.template(templateFile, rep.with) + input.substring(rep.to);
                         }
                         let outfile = path.resolve(outputDir, path.basename(file));
@@ -96,27 +96,36 @@ function parse(url, data, template) {
     const tags = cheerio.load(data);
     let info = Object.assign({url: url}, template.static);
     for (let select in template.selectors) {
-        info[select] = convertToHtml(tags(template.selectors[select]), url);
+        info[select] = applySelector(url, tags, template.selectors[select]);
     }
     return info;
+}
+
+function applySelector(url, tags, selector) {
+    if (Array.isArray(selector)) {
+        let applied = selector.slice();
+        applied[1] = convertToHtml(tags(selector[1]), url);
+        return util.parse.apply(null, applied);
+    }
+    return convertToHtml(tags(selector), url);
 }
 
 function convertToHtml(elems, url) {
     elems.find('a').each((i, e) => {
         let ee = cheerio(e);
-        ee.attr('href', relativize(ee.attr('href'), url));
+        ee.attr('href', relative(ee.attr('href'), url));
     });
     let val = elems.html();
     if (maxLen > 0 && val && val.length > maxLen) {
         let pos = val.indexOf('</p>', maxLen);
         if (pos > 0) {
-            val = val.substring(0, pos + 4) + '<p>...</p>';
+            val = val.substring(0, pos + 4);
         }
     }
     return val;
 }
 
-function relativize(href, base) {
+function relative(href, base) {
     if (href && !href.match('^https?://')) {
         if (href.substring(0, 1) === '#') {
             href = base + href;

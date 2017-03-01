@@ -22,12 +22,12 @@ inputs.forEach(input => {
         } else {
             files.forEach(file => {
                 let raw = fs.readFileSync(file, 'utf8');
-                let split = raw.indexOf('\n---\n');
-                if (split < 0) {
+                let split = /^---\s*$/m.exec(raw);
+                if (split === null) {
                     console.log(chalk.red('--- not found in ' + input));
                 } else {
-                    let data = yaml.safeLoad(raw.substring(0, split));
-                    data.content = marked(raw.substring(split + 5));
+                    let data = yaml.safeLoad(raw.substring(0, split.index));
+                    data.content = marked(raw.substring(split.index + split[0].length));
                     let output = util.template(fs.readFileSync(data.template, 'utf8'), data);
                     let outParts = path.parse(path.resolve(outputDir, path.relative(input, file)));
                     fse.mkdirsSync(outParts.dir);
