@@ -14,14 +14,17 @@ const parserDir = args.opts.parserDir || 'aggregator';
 const template = args.opts.template || 'aggregator/template.html';
 const outputDir = args.opts.outputDir || 'output';
 const maxLen = parseInt(args.opts.maxLen) || 0;
+const cacheDir = path.resolve(parserDir, 'cache');
 const inputs = args.args;
 
 console.log('inputs:     ', chalk.magenta(inputs));
 console.log('parserDir:  ', chalk.magenta(parserDir));
 console.log('template:   ', chalk.magenta(template));
 console.log('outputDir:  ', chalk.magenta(outputDir));
+console.log('cacheDir:   ', chalk.magenta(cacheDir));
 console.log('maxLen:     ', chalk.magenta(maxLen));
 
+fse.mkdirsSync(cacheDir);
 const parsers = readParsers(parserDir);
 const templateFile = fs.readFileSync(template, 'utf8');
 inputs.forEach(file => {
@@ -43,30 +46,50 @@ inputs.forEach(file => {
         }
         scraping++;
         (function (file, input, rest, index) {
-            load(urlMatch[1], path.dirname(file))
-                .then(data => {
-                    let info = parse(urlMatch[1], data, parsers[templateMatch[1]]);
-                    let pos = input.indexOf(rest, index);
-                    replacements.push({from: index - 12, to: pos + rest.length, with: info});
-                    if (--scraping === 0) {
-                        replacements.sort((a, b) => b.from - a.from);
-                        for (let i = 0; i < replacements.length; i++) {
-                            let rep = replacements[i];
-                            rep.with.parity = (replacements.length - i) % 2 === 1 ? 'even' : 'odd';
-                            input = input.substring(0, rep.from) + util.template(templateFile, rep.with) + input.substring(rep.to);
-                        }
-                        let outfile = path.resolve(outputDir, path.basename(file));
-                        fse.mkdirsSync(path.dirname(outfile));
-                        fs.writeFileSync(outfile, input);
-                        console.log('Wrote       ', chalk.blue(path.relative('.', outfile)));
+            console.log('Searching   ', chalk.magenta(urlMatch[1]));
+            let cache = path.resolve(cacheDir, filenameSafe(urlMatch[1]));
+            let doLoad = fs.existsSync(cache) ? readFile(cache) : load(urlMatch[1], outputDir);
+            doLoad.then(data => {
+                fs.writeFileSync(cache, data);
+                let info = parse(urlMatch[1], data, parsers[templateMatch[1]]);
+                let pos = input.indexOf(rest, index);
+                replacements.push({from: index - 12, to: pos + rest.length, with: info});
+            }).catch(err => {
+                console.log(chalk.red(err));
+            }).then(() => {
+                if (--scraping === 0) {
+                    replacements.sort((a, b) => b.from - a.from);
+                    for (let i = 0; i < replacements.length; i++) {
+                        let rep = replacements[i];
+                        rep.with.parity = (replacements.length - i) % 2 === 1 ? 'even' : 'odd';
+                        input = input.substring(0, rep.from) + util.template(templateFile, rep.with) + input.substring(rep.to);
                     }
-                })
-                .catch(err => {
-                    console.log(chalk.red(err));
-                });
+                    let outfile = path.resolve(outputDir, path.basename(file));
+                    fse.mkdirsSync(path.dirname(outfile));
+                    fs.writeFileSync(outfile, input);
+                    console.log('Wrote       ', chalk.blue(path.relative('.', outfile)));
+                }
+            });
         }(file, data, res[2], res.index));
     }
 });
+
+function filenameSafe(s) {
+    return s.replace(/[/\\:*?"<>|]/g, '-');
+}
+
+function readFile(path) {
+    console.log('       found', chalk.magenta(path));
+    return new Promise((resolve, reject) => {
+        fs.readFile(path, 'utf8', (err, data) => {
+            if (err) {
+                reject('could not read ' + filename + ': ' + err);
+            } else {
+                resolve(data);
+            }
+        })
+    });
+}
 
 function readParsers(dir) {
     let res = {};
@@ -80,16 +103,8 @@ function readParsers(dir) {
 
 function load(addr, basedir) {
     if (addr.substring(0, 4) !== 'http') {
-        return new Promise((resolve, reject) => {
-            let filename = path.resolve(basedir, addr);
-            fs.readFile(filename, (err, data) => {
-                if (err) {
-                    reject('could not read ' + filename + ': ' + err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
+        let filename = path.resolve(basedir, addr);
+        return readFile(filename);
     }
     return get(addr).then(res => res.data);
 }
@@ -155,6 +170,7 @@ function relative(href, base) {
 }
 
 function get(addr) {
+    console.log('       found', chalk.magenta(addr));
     return new Promise((resolve, reject) => {
         let options = Object.assign({}, url.parse(addr), {
             headers: {
