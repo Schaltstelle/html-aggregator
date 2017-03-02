@@ -4,6 +4,8 @@ const fs = require('fs');
 const fse = require('fs-extra');
 const path = require('path');
 const http = require('http');
+const https = require('https');
+const url = require('url');
 const cheerio = require('cheerio');
 const util = require('./util');
 
@@ -41,7 +43,7 @@ inputs.forEach(file => {
         }
         scraping++;
         (function (file, input, rest, index) {
-            load(urlMatch[1], outputDir)
+            load(urlMatch[1], path.dirname(file))
                 .then(data => {
                     let info = parse(urlMatch[1], data, parsers[templateMatch[1]]);
                     let pos = input.indexOf(rest, index);
@@ -76,10 +78,10 @@ function readParsers(dir) {
     return res;
 }
 
-function load(url, basedir) {
-    if (url.substring(0, 4) !== 'http') {
+function load(addr, basedir) {
+    if (addr.substring(0, 4) !== 'http') {
         return new Promise((resolve, reject) => {
-            let filename = path.resolve(basedir, url);
+            let filename = path.resolve(basedir, addr);
             fs.readFile(filename, (err, data) => {
                 if (err) {
                     reject('could not read ' + filename + ': ' + err);
@@ -89,31 +91,44 @@ function load(url, basedir) {
             });
         });
     }
-    return get(url).then(res => res.data);
+    return get(addr).then(res => res.data);
 }
 
-function parse(url, data, template) {
+function parse(addr, data, template) {
     const tags = cheerio.load(data);
-    let info = Object.assign({url: url}, template.static);
+    let info = Object.assign({url: addr}, template.static);
     for (let select in template.selectors) {
-        info[select] = applySelector(url, tags, template.selectors[select]);
+        info[select] = applySelector(addr, tags, template.selectors[select]);
     }
     return info;
 }
 
-function applySelector(url, tags, selector) {
+function applySelector(addr, tags, selector) {
     if (Array.isArray(selector)) {
         let applied = selector.slice();
-        applied[1] = convertToHtml(tags(selector[1]), url);
+        applied[1] = extract(addr, tags, selector[1]);
         return util.parse.apply(null, applied);
     }
-    return convertToHtml(tags(selector), url);
+    return extract(addr, tags, selector);
 }
 
-function convertToHtml(elems, url) {
+function extract(addr, tags, selector) {
+    let elem = /(.*?) \[(.*?)]$/.exec(selector);
+    if (elem) {
+        let tag = tags(elem[1]);
+        let attr = tag.attr(elem[2]);
+        if (tag.get(0).tagName === 'img' && elem[2] === 'src') {
+            attr = relative(attr, addr);
+        }
+        return attr;
+    }
+    return convertToHtml(addr, tags(selector));
+}
+
+function convertToHtml(addr, elems) {
     elems.find('a').each((i, e) => {
         let ee = cheerio(e);
-        ee.attr('href', relative(ee.attr('href'), url));
+        ee.attr('href', relative(ee.attr('href'), addr));
     });
     let val = elems.html();
     if (maxLen > 0 && val && val.length > maxLen) {
@@ -126,21 +141,29 @@ function convertToHtml(elems, url) {
 }
 
 function relative(href, base) {
+    let rel = href;
     if (href && !href.match('^https?://')) {
         if (href.substring(0, 1) === '#') {
-            href = base + href;
+            rel = base + href;
         } else if (href.substring(0, 1) === '/') {
-            href = base.substring(0, base.indexOf('/', 8)) + href;
+            rel = base.substring(0, base.indexOf('/', 8)) + href;
         } else {
-            href = base.substring(0, base.lastIndexOf('/') + 1) + href;
+            rel = base.substring(0, base.lastIndexOf('/') + 1) + href;
         }
     }
-    return href;
+    return path.normalize(rel);
 }
 
-function get(url) {
+function get(addr) {
     return new Promise((resolve, reject) => {
-        const req = http.request(url, resp => {
+        let options = Object.assign({}, url.parse(addr), {
+            headers: {
+                accept: 'text/html',
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
+            }
+        });
+        let client = options.protocol === 'https:' ? https : http;
+        const req = client.request(options, resp => {
             let body = '';
             resp.on('data', d => body += d);
             resp.on('end', () => resolve({

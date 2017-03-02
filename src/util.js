@@ -44,8 +44,11 @@ module.exports = {
 handlebars.registerHelper('formatDate', (date, format) => {
     return moment(date).format(format);
 });
-handlebars.registerHelper('noNewline', (data) => {
+handlebars.registerHelper('noNewlines', (data) => {
     return data.replace(/[\n\r]/g,' ');
+});
+handlebars.registerHelper('noLinks', (data) => {
+    return data.replace(/<a .*?>(.*?)<\/a>/g,'$1');
 });
 
 parseFuncs['parseDate'] = (data, format) => {
