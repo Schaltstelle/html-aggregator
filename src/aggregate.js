@@ -166,7 +166,7 @@ function relative(href, base) {
             rel = base.substring(0, base.lastIndexOf('/') + 1) + href;
         }
     }
-    return path.normalize(rel);
+    return path.normalize(rel).replace(/(https?:\/)([^/])/, '$1/$2');
 }
 
 function get(addr) {
