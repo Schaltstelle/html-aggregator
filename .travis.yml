@@ -1,5 +1,8 @@
-language: node_js
 sudo: false
+language: node_js
+node_js:
+  - "node"
+  - "4"
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)
