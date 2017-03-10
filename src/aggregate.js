@@ -6,7 +6,7 @@ const path = require('path');
 const request = require('request');
 const url = require('url');
 const cheerio = require('cheerio');
-const markdown = require('./markdown');
+const template = require('./template');
 const configs = require('./configs');
 
 let parseFuncs = {};
@@ -20,17 +20,17 @@ module.exports = {
     }
 };
 
-function run(url, parser, template, maxLen, config) {
+function run(url, parser, templ, maxLen, config) {
     fse.mkdirsSync(config.cacheDir);
     const parsers = readParsers(config.parserDir);
-    const templateFile = fs.readFileSync(template, 'utf8');
+    const templateFile = fs.readFileSync(templ, 'utf8');
     console.log('Searching   ', chalk.blue(url));
     let cache = path.resolve(config.cacheDir, filenameSafe(url));
     let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, '.');
     return doLoad.then(data => {
         fs.writeFileSync(cache, data);
         let info = parse(url, data, parsers[parser], maxLen);
-        return markdown.template(templateFile, info);
+        return template.string(templateFile, info);
     });
 }
 

@@ -1,40 +1,34 @@
 "use strict";
+const template = require('./template');
 const markdown = require('./markdown');
 const aggregate = require('./aggregate');
 const moment = require('moment');
 
 module.exports = {
-    markdown: function (source, data) {
-        markdown.template(source, data)
-    },
-    markdownAll: function (config) {
-        markdown.run(config)
-    },
-    registerHelper: function (name, func) {
-        markdown.registerHelper(name, func);
-    },
-    registerParser:function(name, func){
-        aggregate.registerParser(name, func);
-    }
+    templateString: template.string,
+    templateFile: template.file,
+    markdown: markdown.run,
+    registerHelper: template.registerHelper,
+    registerParser: aggregate.registerParser
 };
 
 aggregate.registerParser('parseDate', (data, format) => {
     return moment(data, format).toDate();
 });
 
-markdown.registerHelper('formatDate', (date, format) => {
+template.registerHelper('formatDate', (date, format) => {
     return moment(date).format(format);
 });
 
-markdown.registerHelper('noNewlines', (data) => {
+template.registerHelper('noNewlines', (data) => {
     return data.replace(/[\n\r]/g, ' ');
 });
 
-markdown.registerHelper('noLinks', (data) => {
+template.registerHelper('noLinks', (data) => {
     return data.replace(/<a( .*?)?>(.*?)<\/a>/g, '$2');
 });
 
-markdown.registerHelper('aggregate', (url, parser, template, maxLen) => {
+template.registerHelper('aggregate', (url, parser, template, maxLen) => {
     return aggregate.run(url, parser, template, maxLen);
 });
 
