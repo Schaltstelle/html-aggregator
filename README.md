@@ -1,4 +1,8 @@
-# html-aggregator 
+# html-aggregator
+[![Build Status](https://travis-ci.org/Schaltstelle/html-aggregator.svg?branch=master)](https://travis-ci.org/Schaltstelle/html-aggregator)
+[![codecov](https://codecov.io/gh/Schaltstelle/html-aggregator/graph/badge.svg)](https://codecov.io/gh/Schaltstelle/html-aggregator)
+[![License](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://opensource.org/licenses/Apache-2.0)
+
 Aggregate html snippets from other pages.
 
 ## Usage
