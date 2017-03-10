@@ -8,12 +8,13 @@ const yaml = require('js-yaml');
 const glob = require('glob');
 const configs = require('./configs');
 const promBars = require('promised-handlebars');
+const handlebars = promBars(require('handlebars'));
 
 module.exports = {
     template: template,
 
     registerHelper(name, func){
-        promBars.registerHelper(name, func);
+        handlebars.registerHelper(name, func);
     },
     run: function (config) {
         let c = configs.parseOrSet(config);
@@ -24,7 +25,7 @@ module.exports = {
 };
 
 function template(source, data) {
-    return promBars.compile(source)(data);
+    return handlebars.compile(source)(data);
 }
 
 function run(config) {
