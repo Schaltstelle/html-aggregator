@@ -35,7 +35,7 @@ function run(config) {
                             let data = yaml.safeLoad(raw.substring(0, split.index));
                             data.content = marked(raw.substring(split.index + split[0].length));
                             pending++;
-                            template.file(data.template, data, path.resolve(config.outputDir, path.relative(input, f))).then(() => {
+                            template.file(data.template, data, path.resolve(config.outputDir, path.relative(input, f)),true).then(() => {
                                 if (--pending === 0) {
                                     resolve();
                                 }

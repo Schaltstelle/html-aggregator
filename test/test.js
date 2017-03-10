@@ -34,13 +34,14 @@ describe('template', () => {
     });
 
     describe('file', () => {
-        it('should work on a file', () => {
-            return template.file('test/template.html', {
+        it('should work on files', () => {
+            return template.file('test/template*.html', {
                 text: 'txt',
                 date: new Date(2017, 9, 8),
                 content: 'c'
-            }, 'test-out/file').then(() => {
-                assertFileEqual('test-out/file.html', 'test/expected-file.html');
+            }, 'test-out').then(() => {
+                assertFileEqual('test-out/template.html', 'test/expected-file.html');
+                assertFileEqual('test-out/template2.html', 'test/expected-file.html');
             });
         });
     });
