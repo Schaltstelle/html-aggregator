@@ -31,7 +31,7 @@ markdown.registerHelper('noNewlines', (data) => {
 });
 
 markdown.registerHelper('noLinks', (data) => {
-    return data.replace(/<a .*?>(.*?)<\/a>/g, '$1');
+    return data.replace(/<a( .*?)?>(.*?)<\/a>/g, '$2');
 });
 
 markdown.registerHelper('aggregate', (url, parser, template, maxLen) => {

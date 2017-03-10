@@ -17,11 +17,11 @@ module.exports = {
                     args.args.push(arg);
                 }
             }
-            args.opts.outputDir = args.opts.outputDir || 'output';
-            args.opts.configDir = args.opts.configDir || '_aggregator';
-            args.opts.parserDir = args.opts.configDir + '/parsers';
-            args.opts.cacheDir = args.opts.configDir + '/cache';
         }
+        args.opts.outputDir = args.opts.outputDir || 'output';
+        args.opts.configDir = args.opts.configDir || '_aggregator';
+        args.opts.parserDir = args.opts.configDir + '/parsers';
+        args.opts.cacheDir = args.opts.configDir + '/cache';
         return args;
     },
     args: args
