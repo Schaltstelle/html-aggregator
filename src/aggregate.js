@@ -7,23 +7,28 @@ const http = require('http');
 const https = require('https');
 const url = require('url');
 const cheerio = require('cheerio');
-const util = require('./util');
-const config = require('./config');
+const index = require('./index');
+const configs = require('./configs');
+
+let parseFuncs = {};
 
 module.exports = {
     run: function (url, parser, template, maxLen) {
-        fse.mkdirsSync(config.cacheDir());
-        const parsers = readParsers(config.parserDir());
+        fse.mkdirsSync(configs.cacheDir);
+        const parsers = readParsers(configs.parserDir);
         const templateFile = fs.readFileSync(template, 'utf8');
         console.log('Searching   ', chalk.blue(url));
-        let cache = path.resolve(config.cacheDir(), filenameSafe(url));
-        let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, config.outputDir());
+        let cache = path.resolve(configs.cacheDir, filenameSafe(url));
+        let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, configs.outputDir);
         return doLoad.then(data => {
             fs.writeFileSync(cache, data);
             let info = parse(url, data, parsers[parser], maxLen);
             // info.parity = (replacements.length - i) % 2 === 1 ? 'even' : 'odd';
-            return util.template(templateFile, info);
+            return index.markdown(templateFile, info);
         });
+    },
+    registerParser(name, func){
+        parseFuncs[name] = func;
     }
 };
 
@@ -75,9 +80,18 @@ function applySelector(addr, tags, selector, maxLen) {
     if (Array.isArray(selector)) {
         let applied = selector.slice();
         applied[1] = extract(addr, tags, selector[1], maxLen);
-        return util.parse.apply(null, applied);
+        return parseFunc.apply(null, applied);
     }
     return extract(addr, tags, selector, maxLen);
+}
+
+function parseFunc(func, data, params) {
+    let parser = parseFuncs[func];
+    if (!parser) {
+        console.log(chalk.red('Ignoring unknown parse function ' + func));
+        return data;
+    }
+    return parser.apply(null, Array.prototype.slice.call(arguments, 1));
 }
 
 function extract(addr, tags, selector, maxLen) {

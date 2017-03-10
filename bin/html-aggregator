@@ -1,6 +1,10 @@
 #! /usr/bin/env node
+var chalk = require('chalk');
 
-switch (process.argv[2]){
-    case 'markdown': return require('../src/markdown.js');
-    default: return require('../src/util').help();
+switch (process.argv[2]) {
+case 'markdown':
+    return require('../src/markdown.js').run();
+default:
+    console.log('Usage:', chalk.magenta('html-aggregator'), chalk.blue('command'), chalk.red('options'));
+    console.log(chalk.blue('markdown'), '       Create HTML from markdown.');
 }
