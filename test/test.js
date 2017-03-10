@@ -2,8 +2,11 @@
 
 const assert = require('assert');
 const fs = require('fs');
+const fse = require('fs-extra');
 const index = require('../src/index');
 const markdown = require('../src/markdown');
+const aggregate = require('../src/aggregate');
+const configs = require('../src/configs');
 
 describe('markdown', () => {
     describe('template', () => {
@@ -31,9 +34,37 @@ describe('markdown', () => {
 
     describe('run', () => {
         it('should run', () => {
-            return markdown.run({args: ['test'], opts: {outputDir: 'test-out', configDir: 'test'}}).then(() => {
-                assert.equal(fs.readFileSync('test-out/data.html', 'utf8'), fs.readFileSync('test/expected-data.html', 'utf8'));
+            return markdown.run({args: ['test'], outputDir: 'test-out', configDir: 'test'}).then(() => {
+                assertFileEqual('test-out/data.html', 'test/expected-data.html');
             });
         });
     });
 });
+
+describe('aggregate', () => {
+    it('should gather data from file', () => {
+        configs.parseOrSet({});
+        fse.removeSync('test/cache');
+        return aggregate.run('test/agg-input.html', 'file', 'test/agg-template.html').then(res => {
+            assert.equal(res, fs.readFileSync('test/expected-file-agg.html', 'utf8'));
+        });
+    });
+    it('should gather data from url', () => {
+        configs.parseOrSet({});
+        fse.removeSync('test/cache');
+        return aggregate.run('http://en.wikipedia.org', 'wikipedia', 'test/agg-template.html').then(res => {
+            assert.equal(res, fs.readFileSync('test/expected-url-agg.html', 'utf8'));
+        });
+    });
+    it('should work as a helper', () => {
+        configs.parseOrSet({});
+        fse.removeSync('test/cache');
+        return markdown.template('{{{aggregate "test/agg-input.html" "file" "test/agg-template.html"}}}',{}).then(res => {
+            assert.equal(res, fs.readFileSync('test/expected-file-agg.html', 'utf8'));
+        });
+    });
+});
+
+function assertFileEqual(actual, expected) {
+    assert.equal(fs.readFileSync(actual, 'utf8'), fs.readFileSync(expected, 'utf8'));
+}

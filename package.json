@@ -25,7 +25,8 @@
     "js-yaml": "3.8.1",
     "marked": "0.3.6",
     "moment": "2.17.1",
-    "promised-handlebars": "2.0.1"
+    "promised-handlebars": "2.0.1",
+    "request": "2.81.0"
   },
   "devDependencies": {
     "istanbul": "0.4.5",

@@ -19,7 +19,7 @@ module.exports = {
     run: function (config) {
         let c = configs.parseOrSet(config);
         console.log('inputs:     ', chalk.magenta(c.args));
-        console.log('outputDir:  ', chalk.magenta(c.opts.outputDir));
+        console.log('outputDir:  ', chalk.magenta(c.outputDir));
         return run(c);
     }
 };
@@ -46,7 +46,7 @@ function run(config) {
                             data.content = marked(raw.substring(split.index + split[0].length));
                             pending++;
                             template(fs.readFileSync(data.template, 'utf8'), data).then(output => {
-                                let outParts = path.parse(path.resolve(config.opts.outputDir, path.relative(input, file)));
+                                let outParts = path.parse(path.resolve(config.outputDir, path.relative(input, file)));
                                 fse.mkdirsSync(outParts.dir);
                                 let ext = path.extname(data.template);
                                 let outfile = path.resolve(outParts.dir, outParts.name + ext);

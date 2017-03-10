@@ -3,46 +3,48 @@ const chalk = require('chalk');
 const fs = require('fs');
 const fse = require('fs-extra');
 const path = require('path');
-const http = require('http');
-const https = require('https');
+const request = require('request');
 const url = require('url');
 const cheerio = require('cheerio');
-const index = require('./index');
+const markdown = require('./markdown');
 const configs = require('./configs');
 
 let parseFuncs = {};
 
 module.exports = {
     run: function (url, parser, template, maxLen) {
-        fse.mkdirsSync(configs.cacheDir);
-        const parsers = readParsers(configs.parserDir);
-        const templateFile = fs.readFileSync(template, 'utf8');
-        console.log('Searching   ', chalk.blue(url));
-        let cache = path.resolve(configs.cacheDir, filenameSafe(url));
-        let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, configs.outputDir);
-        return doLoad.then(data => {
-            fs.writeFileSync(cache, data);
-            let info = parse(url, data, parsers[parser], maxLen);
-            // info.parity = (replacements.length - i) % 2 === 1 ? 'even' : 'odd';
-            return index.markdown(templateFile, info);
-        });
+        return run(url, parser, template, maxLen, configs.args);
     },
     registerParser(name, func){
         parseFuncs[name] = func;
     }
 };
 
+function run(url, parser, template, maxLen, config) {
+    fse.mkdirsSync(config.cacheDir);
+    const parsers = readParsers(config.parserDir);
+    const templateFile = fs.readFileSync(template, 'utf8');
+    console.log('Searching   ', chalk.blue(url));
+    let cache = path.resolve(config.cacheDir, filenameSafe(url));
+    let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, '.');
+    return doLoad.then(data => {
+        fs.writeFileSync(cache, data);
+        let info = parse(url, data, parsers[parser], maxLen);
+        return markdown.template(templateFile, info);
+    });
+}
+
 function filenameSafe(s) {
     return s.replace(/[/\\:*?"<>|]/g, '-');
 }
 
 function readFile(path) {
-    console.log('       found', chalk.magenta(path));
     return new Promise((resolve, reject) => {
         fs.readFile(path, 'utf8', (err, data) => {
             if (err) {
-                reject('could not read ' + filename + ': ' + err);
+                reject(err);
             } else {
+                console.log('       found', chalk.magenta(path));
                 resolve(data);
             }
         })
@@ -64,7 +66,7 @@ function load(addr, basedir) {
         let filename = path.resolve(basedir, addr);
         return readFile(filename);
     }
-    return get(addr).then(res => res.data);
+    return get(addr);
 }
 
 function parse(addr, data, template, maxLen) {
@@ -98,6 +100,10 @@ function extract(addr, tags, selector, maxLen) {
     let elem = /(.*?) \[(.*?)]$/.exec(selector);
     if (elem) {
         let tag = tags(elem[1]);
+        if (tag.length === 0) {
+            console.log(chalk.red('tag "' + elem[1] + '" not found.'));
+            return '';
+        }
         let attr = tag.attr(elem[2]);
         if (tag.get(0).tagName === 'img' && elem[2] === 'src') {
             attr = relative(attr, addr);
@@ -137,26 +143,23 @@ function relative(href, base) {
 }
 
 function get(addr) {
-    console.log('       found', chalk.magenta(addr));
+    console.log('     loading', chalk.magenta(addr));
     return new Promise((resolve, reject) => {
-        let options = Object.assign({}, url.parse(addr), {
+        let options = {
+            url: addr,
             headers: {
                 accept: 'text/html',
                 'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
             }
+        };
+        request(options, (err, res, body) => {
+            if (err) {
+                reject(err);
+            } else if (res.statusCode !== 200) {
+                reject('Got response code ' + res.statusCode);
+            } else {
+                resolve(body);
+            }
         });
-        let client = options.protocol === 'https:' ? https : http;
-        const req = client.request(options, resp => {
-            let body = '';
-            resp.on('data', d => body += d);
-            resp.on('end', () => resolve({
-                data: body,
-                statusCode: resp.statusCode,
-                headers: resp.headers
-            }));
-        });
-
-        req.on('error', err => reject(err.message));
-        req.end();
     });
 }
