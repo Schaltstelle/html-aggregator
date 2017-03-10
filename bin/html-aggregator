@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
 switch (process.argv[2]){
-    case 'aggregate': return require('../src/aggregate.js');
+    case 'aggregate': return require('../src/aggregate.js').cmdRun();
     case 'markdown': return require('../src/markdown.js');
     default: return require('../src/util').help();
 }

@@ -9,70 +9,44 @@ const url = require('url');
 const cheerio = require('cheerio');
 const util = require('./util');
 
-const args = util.parseArgs();
-const parserDir = args.opts.parserDir || 'aggregator';
-const template = args.opts.template || 'aggregator/template.html';
-const outputDir = args.opts.outputDir || 'output';
-const maxLen = parseInt(args.opts.maxLen) || 0;
-const cacheDir = path.resolve(parserDir, 'cache');
-const inputs = args.args;
+module.exports = {
+    cmdRun: cmdRun,
+    run: run
+};
 
-console.log('inputs:     ', chalk.magenta(inputs));
-console.log('parserDir:  ', chalk.magenta(parserDir));
-console.log('template:   ', chalk.magenta(template));
-console.log('outputDir:  ', chalk.magenta(outputDir));
-console.log('cacheDir:   ', chalk.magenta(cacheDir));
-console.log('maxLen:     ', chalk.magenta(maxLen));
+function cmdRun() {
+    const args = util.parseArgs();
+    const parserDir = args.opts.parserDir || '_aggregator';
+    const config = {
+        parserDir: parserDir,
+        outputDir: args.opts.outputDir || 'output',
+        maxLen: parseInt(args.opts.maxLen) || 0,
+        cacheDir: path.resolve(parserDir, 'cache'),
+    };
 
-fse.mkdirsSync(cacheDir);
-const parsers = readParsers(parserDir);
-const templateFile = fs.readFileSync(template, 'utf8');
-inputs.forEach(file => {
-    let data = fs.readFileSync(file, 'utf8');
-    let regex = /<aggregate (.*?)>([^]*?<\/aggregate>)/g;
-    let res;
-    let scraping = 0;
-    let replacements = [];
-    while ((res = regex.exec(data)) !== null) {
-        let urlMatch = /url\s*=\s*"(.*?)"/.exec(res[1]);
-        if (!urlMatch) {
-            console.log(chalk.red('no url attribute found in ' + file + ': ' + res[1]));
-            continue;
-        }
-        let templateMatch = /template\s*=\s*"(.*?)"/.exec(res[1]);
-        if (!templateMatch) {
-            console.log(chalk.red('no template attribute found in ' + file + ': ' + res[1]));
-            continue;
-        }
-        scraping++;
-        (function (file, input, rest, index) {
-            console.log('Searching   ', chalk.magenta(urlMatch[1]));
-            let cache = path.resolve(cacheDir, filenameSafe(urlMatch[1]));
-            let doLoad = fs.existsSync(cache) ? readFile(cache) : load(urlMatch[1], outputDir);
-            doLoad.then(data => {
-                fs.writeFileSync(cache, data);
-                let info = parse(urlMatch[1], data, parsers[templateMatch[1]]);
-                let pos = input.indexOf(rest, index);
-                replacements.push({from: index - 12, to: pos + rest.length, with: info});
-            }).catch(err => {
-                console.log(chalk.red(err));
-            }).then(() => {
-                if (--scraping === 0) {
-                    replacements.sort((a, b) => b.from - a.from);
-                    for (let i = 0; i < replacements.length; i++) {
-                        let rep = replacements[i];
-                        rep.with.parity = (replacements.length - i) % 2 === 1 ? 'even' : 'odd';
-                        input = input.substring(0, rep.from) + util.template(templateFile, rep.with) + input.substring(rep.to);
-                    }
-                    let outfile = path.resolve(outputDir, path.basename(file));
-                    fse.mkdirsSync(path.dirname(outfile));
-                    fs.writeFileSync(outfile, input);
-                    console.log('Wrote       ', chalk.blue(path.relative('.', outfile)));
-                }
-            });
-        }(file, data, res[2], res.index));
-    }
-});
+    console.log('parserDir:  ', chalk.magenta(config.parserDir));
+    console.log('outputDir:  ', chalk.magenta(config.outputDir));
+    console.log('cacheDir:   ', chalk.magenta(config.cacheDir));
+    console.log('maxLen:     ', chalk.magenta(config.maxLen));
+    run(config);
+}
+
+function run(url, parser, template, config) {
+    fse.mkdirsSync(config.cacheDir);
+    const parsers = readParsers(config.parserDir);
+    const templateFile = fs.readFileSync(template, 'utf8');
+    console.log('Searching   ', chalk.blue(url));
+    let cache = path.resolve(config.cacheDir, filenameSafe(url));
+    let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, config.outputDir);
+    doLoad.then(data => {
+        fs.writeFileSync(cache, data);
+        let info = parse(url, data, parsers[parser], config.maxLen);
+      // info.parity = (replacements.length - i) % 2 === 1 ? 'even' : 'odd';
+        return util.template(templateFile, info);
+    }).catch(err => {
+        console.log(chalk.red(err));
+    });
+}
 
 function filenameSafe(s) {
     return s.replace(/[/\\:*?"<>|]/g, '-');
@@ -109,25 +83,25 @@ function load(addr, basedir) {
     return get(addr).then(res => res.data);
 }
 
-function parse(addr, data, template) {
+function parse(addr, data, template, maxLen) {
     const tags = cheerio.load(data);
     let info = Object.assign({url: addr}, template.static);
     for (let select in template.selectors) {
-        info[select] = applySelector(addr, tags, template.selectors[select]);
+        info[select] = applySelector(addr, tags, template.selectors[select], maxLen);
     }
     return info;
 }
 
-function applySelector(addr, tags, selector) {
+function applySelector(addr, tags, selector, maxLen) {
     if (Array.isArray(selector)) {
         let applied = selector.slice();
-        applied[1] = extract(addr, tags, selector[1]);
+        applied[1] = extract(addr, tags, selector[1], maxLen);
         return util.parse.apply(null, applied);
     }
-    return extract(addr, tags, selector);
+    return extract(addr, tags, selector, maxLen);
 }
 
-function extract(addr, tags, selector) {
+function extract(addr, tags, selector, maxLen) {
     let elem = /(.*?) \[(.*?)]$/.exec(selector);
     if (elem) {
         let tag = tags(elem[1]);
@@ -137,10 +111,10 @@ function extract(addr, tags, selector) {
         }
         return attr;
     }
-    return convertToHtml(addr, tags(selector));
+    return convertToHtml(addr, tags(selector), maxLen);
 }
 
-function convertToHtml(addr, elems) {
+function convertToHtml(addr, elems, maxLen) {
     elems.find('a').each((i, e) => {
         let ee = cheerio(e);
         ee.attr('href', relative(ee.attr('href'), addr));

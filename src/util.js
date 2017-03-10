@@ -2,6 +2,7 @@
 const chalk = require('chalk');
 const handlebars = require('handlebars');
 const moment = require('moment');
+const aggregate = require('./aggregate');
 
 let parseFuncs = {};
 
@@ -45,10 +46,13 @@ handlebars.registerHelper('formatDate', (date, format) => {
     return moment(date).format(format);
 });
 handlebars.registerHelper('noNewlines', (data) => {
-    return data.replace(/[\n\r]/g,' ');
+    return data.replace(/[\n\r]/g, ' ');
 });
 handlebars.registerHelper('noLinks', (data) => {
-    return data.replace(/<a .*?>(.*?)<\/a>/g,'$1');
+    return data.replace(/<a .*?>(.*?)<\/a>/g, '$1');
+});
+handlebars.registerHelper('aggregate', (url, template) => {
+    return aggregate.run({});
 });
 
 parseFuncs['parseDate'] = (data, format) => {
