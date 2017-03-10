@@ -1,6 +1,6 @@
 'use strict';
 const chalk = require('chalk');
-const handlebars = require('handlebars');
+const promBars = require('promised-handlebars');
 const moment = require('moment');
 const aggregate = require('./aggregate');
 
@@ -10,26 +10,11 @@ module.exports = {
 
     help: function () {
         console.log('Usage:', chalk.magenta('html-aggregator'), chalk.blue('command'), chalk.red('options'));
-        console.log(chalk.blue('aggregate'), '      Aggregate HTML snippets.');
         console.log(chalk.blue('markdown'), '       Create HTML from markdown.');
     },
 
-    parseArgs: function () {
-        let res = {opts: {}, args: []};
-        for (let i = 3; i < process.argv.length; i++) {
-            let arg = process.argv[i];
-            if (arg.substring(0, 2) === '--') {
-                let parts = arg.split('=');
-                res.opts[parts[0].substring(2)] = (parts.length === 2) ? parts[1] : null;
-            } else {
-                res.args.push(arg);
-            }
-        }
-        return res;
-    },
-
     template: function (source, data) {
-        return handlebars.compile(source)(data);
+        return promBars.compile(source)(data);
     },
 
     parse: function (func, data, params) {
@@ -42,17 +27,17 @@ module.exports = {
     }
 };
 
-handlebars.registerHelper('formatDate', (date, format) => {
+promBars.registerHelper('formatDate', (date, format) => {
     return moment(date).format(format);
 });
-handlebars.registerHelper('noNewlines', (data) => {
+promBars.registerHelper('noNewlines', (data) => {
     return data.replace(/[\n\r]/g, ' ');
 });
-handlebars.registerHelper('noLinks', (data) => {
+promBars.registerHelper('noLinks', (data) => {
     return data.replace(/<a .*?>(.*?)<\/a>/g, '$1');
 });
-handlebars.registerHelper('aggregate', (url, template) => {
-    return aggregate.run({});
+promBars.registerHelper('aggregate', (url, parser, template, maxLen) => {
+    return aggregate.run(url, parser, template, maxLen);
 });
 
 parseFuncs['parseDate'] = (data, format) => {

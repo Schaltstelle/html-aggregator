@@ -7,13 +7,10 @@ const fse = require('fs-extra');
 const yaml = require('js-yaml');
 const glob = require('glob');
 const util = require('./util');
+const config = require('./config');
 
-const args = util.parseArgs();
-const inputs = args.args;
-const outputDir = args.opts.outputDir || 'output';
-
-console.log('inputs:     ', chalk.magenta(inputs));
-console.log('outputDir:  ', chalk.magenta(outputDir));
+console.log('inputs:     ', chalk.magenta(config.args()));
+console.log('outputDir:  ', chalk.magenta(config.outputDir()));
 
 inputs.forEach(input => {
     glob(input + '/**/*.md', (err, files) => {
@@ -28,13 +25,14 @@ inputs.forEach(input => {
                 } else {
                     let data = yaml.safeLoad(raw.substring(0, split.index));
                     data.content = marked(raw.substring(split.index + split[0].length));
-                    let output = util.template(fs.readFileSync(data.template, 'utf8'), data);
-                    let outParts = path.parse(path.resolve(outputDir, path.relative(input, file)));
-                    fse.mkdirsSync(outParts.dir);
-                    let ext = path.extname(data.template);
-                    let outfile = path.resolve(outParts.dir, outParts.name + ext);
-                    fs.writeFileSync(outfile, output);
-                    console.log('Wrote       ', chalk.blue(path.relative('.', outfile)));
+                    util.template(fs.readFileSync(data.template, 'utf8'), data).then(output=> {
+                        let outParts = path.parse(path.resolve(outputDir, path.relative(input, file)));
+                        fse.mkdirsSync(outParts.dir);
+                        let ext = path.extname(data.template);
+                        let outfile = path.resolve(outParts.dir, outParts.name + ext);
+                        fs.writeFileSync(outfile, output);
+                        console.log('Wrote       ', chalk.blue(path.relative('.', outfile)));
+                    });
                 }
             });
         }

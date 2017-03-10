@@ -8,45 +8,24 @@ const https = require('https');
 const url = require('url');
 const cheerio = require('cheerio');
 const util = require('./util');
+const config = require('./config');
 
 module.exports = {
-    cmdRun: cmdRun,
-    run: run
+    run: function (url, parser, template, maxLen) {
+        fse.mkdirsSync(config.cacheDir());
+        const parsers = readParsers(config.parserDir());
+        const templateFile = fs.readFileSync(template, 'utf8');
+        console.log('Searching   ', chalk.blue(url));
+        let cache = path.resolve(config.cacheDir(), filenameSafe(url));
+        let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, config.outputDir());
+        return doLoad.then(data => {
+            fs.writeFileSync(cache, data);
+            let info = parse(url, data, parsers[parser], maxLen);
+            // info.parity = (replacements.length - i) % 2 === 1 ? 'even' : 'odd';
+            return util.template(templateFile, info);
+        });
+    }
 };
-
-function cmdRun() {
-    const args = util.parseArgs();
-    const parserDir = args.opts.parserDir || '_aggregator';
-    const config = {
-        parserDir: parserDir,
-        outputDir: args.opts.outputDir || 'output',
-        maxLen: parseInt(args.opts.maxLen) || 0,
-        cacheDir: path.resolve(parserDir, 'cache'),
-    };
-
-    console.log('parserDir:  ', chalk.magenta(config.parserDir));
-    console.log('outputDir:  ', chalk.magenta(config.outputDir));
-    console.log('cacheDir:   ', chalk.magenta(config.cacheDir));
-    console.log('maxLen:     ', chalk.magenta(config.maxLen));
-    run(config);
-}
-
-function run(url, parser, template, config) {
-    fse.mkdirsSync(config.cacheDir);
-    const parsers = readParsers(config.parserDir);
-    const templateFile = fs.readFileSync(template, 'utf8');
-    console.log('Searching   ', chalk.blue(url));
-    let cache = path.resolve(config.cacheDir, filenameSafe(url));
-    let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, config.outputDir);
-    doLoad.then(data => {
-        fs.writeFileSync(cache, data);
-        let info = parse(url, data, parsers[parser], config.maxLen);
-      // info.parity = (replacements.length - i) % 2 === 1 ? 'even' : 'odd';
-        return util.template(templateFile, info);
-    }).catch(err => {
-        console.log(chalk.red(err));
-    });
-}
 
 function filenameSafe(s) {
     return s.replace(/[/\\:*?"<>|]/g, '-');
