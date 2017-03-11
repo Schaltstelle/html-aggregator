@@ -98,7 +98,7 @@ describe('processors', () => {
         fse.removeSync('test-out/proc');
         configs.add({
             outputDir: 'test-out/proc',
-            exclude: ['test-out/**', 'coverage/**', 'src/**'],
+            exclude: ['test-out/**', 'coverage/**', 'src/**','README.md'],
             text: 'txt',
             date: new Date(2017, 9, 8),
             content: 'c'
