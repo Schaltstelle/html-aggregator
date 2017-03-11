@@ -19,8 +19,8 @@ module.exports = {
     run: run
 };
 
-function run(config) {
-    let c = configs.parseOrSet(config);
+function run() {
+    let c = configs.args;
     return file(c.args[0], c, c.outputDir);
 }
 

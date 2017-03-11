@@ -1,4 +1,5 @@
 "use strict";
+require('./configs');
 const template = require('./template');
 const markdown = require('./markdown');
 const aggregate = require('./aggregate');

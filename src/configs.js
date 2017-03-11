@@ -1,33 +1,49 @@
 'use strict';
 
-let args = {args: []};
+const fs = require('fs');
+const yaml = require('js-yaml');
+
+let args = {args: [], env: process.env};
+readFile('_config.yaml');
+readArgv();
+normalize();
 
 module.exports = {
-    parseOrSet: function (config) {
-        if (config) {
-            Object.assign(args, config);
-        } else {
-            let start = endsWith(process.argv[1], '_mocha') ? 2 : 3;
-            for (let i = start; i < process.argv.length; i++) {
-                let arg = process.argv[i];
-                if (arg.substring(0, 2) === '--') {
-                    let parts = arg.split('=');
-                    args[parts[0].substring(2)] = (parts.length === 2) ? parts[1] : true;
-                } else {
-                    args.args.push(arg);
-                }
-            }
-        }
-        args.outputDir = args.outputDir || 'output';
-        args.configDir = args.configDir || '_aggregator';
-        args.parserDir = args.configDir + '/parsers';
-        args.cacheDir = args.configDir + '/cache';
-        args.pluginDir = args.configDir + '/plugins';
-        args.exclude = Array.isArray(args.exclude) ? args.exclude : (args.exclude || '').split(',');
+    add: function (config) {
+        Object.assign(args, config);
+        normalize();
         return args;
     },
     args: args
 };
+
+function readFile(file) {
+    if (fs.existsSync(file)) {
+        Object.assign(args, yaml.safeLoad(file));
+    }
+}
+
+function readArgv() {
+    let start = endsWith(process.argv[1], '_mocha') ? 2 : 3;
+    for (let i = start; i < process.argv.length; i++) {
+        let arg = process.argv[i];
+        if (arg.substring(0, 2) === '--') {
+            let parts = arg.split('=');
+            args[parts[0].substring(2)] = (parts.length === 2) ? parts[1] : true;
+        } else {
+            args.args.push(arg);
+        }
+    }
+}
+
+function normalize() {
+    args.outputDir = args.outputDir || 'output';
+    args.configDir = args.configDir || '_aggregator';
+    args.parserDir = args.configDir + '/parsers';
+    args.cacheDir = args.configDir + '/cache';
+    args.pluginDir = args.configDir + '/plugins';
+    args.exclude = Array.isArray(args.exclude) ? args.exclude : (args.exclude || '').split(',');
+}
 
 function endsWith(s, end) {
     return s.substring(s.length - end.length) === end;

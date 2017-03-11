@@ -1,7 +1,6 @@
 "use strict";
 
-process.argv.push('--configDir=test');
-process.env.DEBUG='*';
+process.env.DEBUG = '*';
 
 const assert = require('assert');
 const fs = require('fs');
@@ -14,6 +13,7 @@ const configs = require('../src/configs');
 const procs = require('../src/processors');
 
 before(() => {
+    configs.add({configDir: 'test'});
     return require('../src/plugins');
 });
 
@@ -74,21 +74,18 @@ describe('markdown', () => {
 
 describe('aggregate', () => {
     it('should gather data from file', () => {
-        configs.parseOrSet({});
         fse.removeSync('test/cache');
         return aggregate.run('test/agg-input.html', 'file', 'test/agg-template.html').then(res => {
             assert.equal(res, fs.readFileSync('test/expected-file-agg.html', 'utf8'));
         });
     });
     it('should gather data from url', () => {
-        configs.parseOrSet({});
         fse.removeSync('test/cache');
         return aggregate.run('http://en.wikipedia.org', 'wikipedia', 'test/agg-template.html').then(res => {
             assert.equal(res, fs.readFileSync('test/expected-url-agg.html', 'utf8'));
         });
     });
     it('should work as a helper', () => {
-        configs.parseOrSet({});
         fse.removeSync('test/cache');
         return template.string('{{{aggregate "test/agg-input.html" "file" "test/agg-template.html"}}}', {}).then(res => {
             assert.equal(res, fs.readFileSync('test/expected-file-agg.html', 'utf8'));
@@ -99,13 +96,14 @@ describe('aggregate', () => {
 describe('processors', () => {
     it('should include markdown, template and copy', () => {
         fse.removeSync('test-out/proc');
-        return procs.run({
+        configs.add({
             outputDir: 'test-out/proc',
             exclude: ['test-out/**', 'coverage/**', 'src/**'],
             text: 'txt',
             date: new Date(2017, 9, 8),
             content: 'c'
-        }).then(() => {
+        });
+        return procs.run().then(() => {
             assertFileEqual('test-out/proc/test/data.html', 'test/expected-data.html');
             assertFileEqual('test-out/proc/test/template.html', 'test/expected-file.html');
             assert.ok(fs.existsSync('test-out/proc/package.json'));

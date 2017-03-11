@@ -13,8 +13,7 @@ let procs = {};
 
 module.exports = {
     registerProcessor: registerProc,
-    run: function (config) {
-        configs.parseOrSet(config);
+    run: function () {
         return new Promise((resolve, reject) => {
             glob('**', {
                 nodir: true,

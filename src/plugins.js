@@ -30,8 +30,7 @@ template.registerHelper('aggregate', (url, parser, template, maxLen) => {
 
 
 module.exports = new Promise((resolve, reject) => {
-    let c = configs.parseOrSet();
-    glob(c.pluginDir + '/**/*.js', (err, files) => {
+    glob(configs.args.pluginDir + '/**/*.js', (err, files) => {
         if (err) {
             reject('Problem loading plugins: ' + err);
         } else {
