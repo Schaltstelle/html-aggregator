@@ -32,11 +32,11 @@ module.exports = {
 };
 
 registerProc('\.md$', (file) => {
-    markdown.run(file, configs.args.outputDir);
+    return markdown.run(file, configs.args.outputDir);
 });
 
 registerProc('\.html$', (file) => {
-    template.file(file, configs.args, configs.args.outputDir);
+    return template.file(file, configs.args, configs.args.outputDir);
 });
 
 function registerProc(name, proc) {

@@ -62,12 +62,24 @@ function readParsers(dir) {
     return res;
 }
 
-function load(addr, basedir) {
+function load(addr, basedir, count) {
+    if (count > 5) {
+        return Promise.reject('Too many retries');
+    }
     if (addr.substring(0, 4) !== 'http') {
         let filename = path.resolve(basedir, addr);
-        return readFile(filename);
+        return retrying(readFile(filename));
     }
-    return get(addr);
+    return retrying(get(addr));
+
+    function retrying(promise) {
+        return promise.catch((err) => {
+            debug(chalk.red(err));
+            return new Promise((resolve, reject) => {
+                setTimeout(() => resolve(load(addr, basedir, (count || 0) + 1)), 500);
+            });
+        });
+    }
 }
 
 function parse(addr, data, template, maxLen) {
