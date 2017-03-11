@@ -24,7 +24,7 @@ function run(url, parser, templ, maxLen, config) {
     fse.mkdirsSync(config.cacheDir);
     const parsers = readParsers(config.parserDir);
     const templateFile = fs.readFileSync(templ, 'utf8');
-    console.log('Searching   ', chalk.blue(url));
+    console.log('[aggregate] Searching     ', chalk.blue(url));
     let cache = path.resolve(config.cacheDir, filenameSafe(url));
     let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, '.');
     return doLoad.then(data => {
@@ -44,7 +44,7 @@ function readFile(path) {
             if (err) {
                 reject(err);
             } else {
-                console.log('       found', chalk.magenta(path));
+                console.log('[aggregate]          found', chalk.magenta(path));
                 resolve(data);
             }
         })
@@ -143,7 +143,7 @@ function relative(href, base) {
 }
 
 function get(addr) {
-    console.log('     loading', chalk.magenta(addr));
+    console.log('[aggregate]        loading', chalk.magenta(addr));
     return new Promise((resolve, reject) => {
         let options = {
             url: addr,

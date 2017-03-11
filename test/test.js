@@ -11,6 +11,10 @@ const markdown = require('../src/markdown');
 const aggregate = require('../src/aggregate');
 const configs = require('../src/configs');
 
+before(() => {
+    return require('../src/plugins');
+});
+
 describe('template', () => {
     describe('string', () => {
         it('should replace simple variables', () => {
@@ -36,14 +40,13 @@ describe('template', () => {
     });
 
     describe('file', () => {
-        it('should work on files', () => {
-            return template.file('test/template*.html', {
+        it('should work on file', () => {
+            return template.file('test/template.html', {
                 text: 'txt',
                 date: new Date(2017, 9, 8),
                 content: 'c'
             }, 'test-out').then(() => {
-                assertFileEqual('test-out/template.html', 'test/expected-file.html');
-                assertFileEqual('test-out/template2.html', 'test/expected-file.html');
+                assertFileEqual('test-out/test/template.html', 'test/expected-file.html');
             });
         });
     });
@@ -60,8 +63,8 @@ describe('plugins', () => {
 describe('markdown', () => {
     describe('run', () => {
         it('should run', () => {
-            return markdown.run({args: ['test'], outputDir: 'test-out', configDir: 'test'}).then(() => {
-                assertFileEqual('test-out/data.html', 'test/expected-data.html');
+            return markdown.run('test/data.md', 'test-out').then(() => {
+                assertFileEqual('test-out/test/data.html', 'test/expected-data.html');
             });
         });
     });

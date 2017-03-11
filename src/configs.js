@@ -7,11 +7,12 @@ module.exports = {
         if (config) {
             Object.assign(args, config);
         } else {
-            for (let i = 2; i < process.argv.length; i++) {
+            let start = endsWith(process.argv[1], '_mocha') ? 2 : 3;
+            for (let i = start; i < process.argv.length; i++) {
                 let arg = process.argv[i];
                 if (arg.substring(0, 2) === '--') {
                     let parts = arg.split('=');
-                    args[parts[0].substring(2)] = (parts.length === 2) ? parts[1] : null;
+                    args[parts[0].substring(2)] = (parts.length === 2) ? parts[1] : true;
                 } else {
                     args.args.push(arg);
                 }
@@ -26,3 +27,7 @@ module.exports = {
     },
     args: args
 };
+
+function endsWith(s, end) {
+    return s.substring(s.length - end.length) === end;
+}

@@ -27,15 +27,19 @@ template.registerHelper('aggregate', (url, parser, template, maxLen) => {
     return aggregate.run(url, parser, template, maxLen);
 });
 
-let c = configs.parseOrSet();
-glob(c.pluginDir + '/**/*.js', (err, files) => {
-    if (err) {
-        console.log(chalk.red('Problem loading plugins: ' + err));
-    } else {
-        files.forEach(file => {
-            console.log('Loading plugin', chalk.magenta(file));
-            let relFile = path.relative(__dirname, file);
-            require(relFile.substring(0, relFile.length - 3));
-        });
-    }
+
+module.exports = new Promise((resolve, reject) => {
+    let c = configs.parseOrSet();
+    glob(c.pluginDir + '/**/*.js', (err, files) => {
+        if (err) {
+            reject('Problem loading plugins: ' + err);
+        } else {
+            files.forEach(file => {
+                console.log('Loading plugin', chalk.magenta(file));
+                let relFile = path.relative(__dirname, file);
+                require(relFile.substring(0, relFile.length - 3));
+            });
+            resolve();
+        }
+    });
 });

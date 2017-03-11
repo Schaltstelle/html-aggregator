@@ -6,6 +6,7 @@ const fse = require('fs-extra');
 const promBars = require('promised-handlebars');
 const handlebars = promBars(require('handlebars'));
 const glob = require('glob');
+const configs = require('./configs');
 
 module.exports = {
     registerHelper(name, func){
@@ -14,22 +15,19 @@ module.exports = {
 
     string: string,
     file: file,
+    run: run
 };
 
-function file(inPattern, data, out, isOutName) {
-    return new Promise((resolve, reject) => {
-        glob(inPattern, (err, files) => {
-            if (err) {
-                reject(err);
-            }
-            resolve(Promise.all(files.map(file =>
-                string(fs.readFileSync(file, 'utf8'), data).then(output => {
-                    let outfile = resolveFile(file, out, isOutName);
-                    fs.writeFileSync(outfile, output);
-                    console.log('Wrote       ', chalk.blue(path.relative('.', outfile)));
-                })
-            )));
-        });
+function run(config) {
+    let c = configs.parseOrSet(config);
+    return file(c.args[0], c, c.outputDir);
+}
+
+function file(file, data, out, isOutName) {
+    return string(fs.readFileSync(file, 'utf8'), data).then(output => {
+        let outfile = resolveFile(file, out, isOutName);
+        fs.writeFileSync(outfile, output);
+        console.log('[template] Wrote         ', chalk.blue(outfile));
     });
 }
 
@@ -40,7 +38,7 @@ function resolveFile(file, out, isOutName) {
         return path.resolve(outParts.dir, outParts.name + path.extname(file));
     }
     fse.mkdirsSync(out);
-    return path.resolve(out, path.basename(file));
+    return path.resolve(out, file);
 }
 
 function string(input, data) {

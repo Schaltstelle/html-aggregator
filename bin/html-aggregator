@@ -2,12 +2,12 @@
 var chalk = require('chalk');
 var index = require('../src/index');
 
-switch (process.argv[2]) {
-case 'markdown':
-    return index.markdown();
-case 'template':
-    return index.template();
-default:
-    console.log('Usage:', chalk.magenta('html-aggregator'), chalk.blue('command'), chalk.red('options'));
-    console.log(chalk.blue('markdown'), '       Create HTML from markdown.');
-}
+require('../src/plugins').then(() => {
+    switch (process.argv[2]) {
+    case 'build':
+        return index.run();
+    default:
+        console.log('Usage:', chalk.magenta('html-aggregator'), chalk.blue('command'), chalk.red('options'));
+        console.log(chalk.blue('markdown'), '       Create HTML from markdown.');
+    }
+});
