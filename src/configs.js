@@ -7,7 +7,7 @@ module.exports = {
         if (config) {
             Object.assign(args, config);
         } else {
-            for (let i = 3; i < process.argv.length; i++) {
+            for (let i = 2; i < process.argv.length; i++) {
                 let arg = process.argv[i];
                 if (arg.substring(0, 2) === '--') {
                     let parts = arg.split('=');
@@ -21,6 +21,7 @@ module.exports = {
         args.configDir = args.configDir || '_aggregator';
         args.parserDir = args.configDir + '/parsers';
         args.cacheDir = args.configDir + '/cache';
+        args.pluginDir = args.configDir + '/plugins';
         return args;
     },
     args: args

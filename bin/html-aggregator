@@ -4,7 +4,9 @@ var index = require('../src/index');
 
 switch (process.argv[2]) {
 case 'markdown':
-    return index.markdownAll();
+    return index.markdown();
+case 'template':
+    return index.template();
 default:
     console.log('Usage:', chalk.magenta('html-aggregator'), chalk.blue('command'), chalk.red('options'));
     console.log(chalk.blue('markdown'), '       Create HTML from markdown.');

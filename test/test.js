@@ -1,5 +1,7 @@
 "use strict";
 
+process.argv.push('--configDir=test');
+
 const assert = require('assert');
 const fs = require('fs');
 const fse = require('fs-extra');
@@ -43,6 +45,14 @@ describe('template', () => {
                 assertFileEqual('test-out/template.html', 'test/expected-file.html');
                 assertFileEqual('test-out/template2.html', 'test/expected-file.html');
             });
+        });
+    });
+});
+
+describe('plugins', () => {
+    it('should be picked up automatically', () => {
+        return template.string('{{loremIpsum}}').then(res => {
+            assert.equal(res, 'Lorem ipsum dolor sit amet.');
         });
     });
 });
