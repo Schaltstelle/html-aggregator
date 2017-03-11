@@ -1,13 +1,17 @@
 #! /usr/bin/env node
+if (!process.env.DEBUG) {
+    process.env.DEBUG = '*';
+}
+var debug = require('debug')('html-aggregator');
 var chalk = require('chalk');
 var index = require('../src/index');
 
 require('../src/plugins').then(() => {
     switch (process.argv[2]) {
     case 'build':
-        return index.run().catch(err => console.log(chalk.red(err)));
+        return index.run().catch(err => debug(chalk.red(err)));
     default:
-        console.log('Usage:', chalk.magenta('html-aggregator'), chalk.blue('command'), chalk.red('options'));
-        console.log(chalk.blue('markdown'), '       Create HTML from markdown.');
+        debug('Usage:', chalk.magenta('html-aggregator'), chalk.blue('command'), chalk.red('options'));
+        debug(chalk.blue('markdown'), '       Create HTML from markdown.');
     }
 });

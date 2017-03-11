@@ -1,4 +1,5 @@
 'use strict';
+const debug = require('debug')('template');
 const chalk = require('chalk');
 const path = require('path');
 const fs = require('fs');
@@ -27,7 +28,7 @@ function file(file, data, out, isOutName) {
     return string(fs.readFileSync(file, 'utf8'), data).then(output => {
         let outfile = resolveFile(file, out, isOutName);
         fs.writeFileSync(outfile, output);
-        console.log('[template] Wrote         ', chalk.blue(outfile));
+        debug('Wrote', chalk.blue(path.relative('', outfile)));
     });
 }
 

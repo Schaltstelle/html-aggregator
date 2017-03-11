@@ -1,6 +1,7 @@
 "use strict";
 
 process.argv.push('--configDir=test');
+process.env.DEBUG='*';
 
 const assert = require('assert');
 const fs = require('fs');

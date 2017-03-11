@@ -1,4 +1,5 @@
 'use strict';
+const debug = require('debug')('aggregate');
 const chalk = require('chalk');
 const fs = require('fs');
 const fse = require('fs-extra');
@@ -24,7 +25,7 @@ function run(url, parser, templ, maxLen, config) {
     fse.mkdirsSync(config.cacheDir);
     const parsers = readParsers(config.parserDir);
     const templateFile = fs.readFileSync(templ, 'utf8');
-    console.log('[aggregate] Searching     ', chalk.blue(url));
+    debug('Searching', chalk.blue(url));
     let cache = path.resolve(config.cacheDir, filenameSafe(url));
     let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, '.');
     return doLoad.then(data => {
@@ -38,13 +39,13 @@ function filenameSafe(s) {
     return s.replace(/[/\\:*?"<>|]/g, '-');
 }
 
-function readFile(path) {
+function readFile(file) {
     return new Promise((resolve, reject) => {
-        fs.readFile(path, 'utf8', (err, data) => {
+        fs.readFile(file, 'utf8', (err, data) => {
             if (err) {
                 reject(err);
             } else {
-                console.log('[aggregate]          found', chalk.magenta(path));
+                debug('Found', chalk.magenta(path.relative('', file)));
                 resolve(data);
             }
         })
@@ -90,7 +91,7 @@ function applySelector(addr, tags, selector, maxLen) {
 function parseFunc(func, data, params) {
     let parser = parseFuncs[func];
     if (!parser) {
-        console.log(chalk.red('Ignoring unknown parse function ' + func));
+        debug(chalk.red('Ignoring unknown parse function ' + func));
         return data;
     }
     return parser.apply(null, Array.prototype.slice.call(arguments, 1));
@@ -101,7 +102,7 @@ function extract(addr, tags, selector, maxLen) {
     if (elem) {
         let tag = tags(elem[1]);
         if (tag.length === 0) {
-            console.log(chalk.red('tag "' + elem[1] + '" not found.'));
+            debug(chalk.red('tag "' + elem[1] + '" not found.'));
             return '';
         }
         let attr = tag.attr(elem[2]);
@@ -143,7 +144,7 @@ function relative(href, base) {
 }
 
 function get(addr) {
-    console.log('[aggregate]        loading', chalk.magenta(addr));
+    debug('Loading', chalk.magenta(addr));
     return new Promise((resolve, reject) => {
         let options = {
             url: addr,

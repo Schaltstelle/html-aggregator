@@ -1,4 +1,5 @@
 "use strict";
+const debug = require('debug')('plugins');
 const chalk = require('chalk');
 const template = require('./template');
 const aggregate = require('./aggregate');
@@ -35,7 +36,7 @@ module.exports = new Promise((resolve, reject) => {
             reject('Problem loading plugins: ' + err);
         } else {
             files.forEach(file => {
-                console.log('Loading plugin', chalk.magenta(file));
+                debug('Loading plugin', chalk.magenta(file));
                 let relFile = path.relative(__dirname, file);
                 require(relFile.substring(0, relFile.length - 3));
             });

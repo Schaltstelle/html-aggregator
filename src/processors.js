@@ -1,5 +1,6 @@
 'use strict';
 
+const debug = require('debug')('processors');
 const template = require('./template');
 const markdown = require('./markdown');
 const aggregate = require('./aggregate');
@@ -22,7 +23,10 @@ module.exports = {
                 if (err) {
                     reject(err);
                 }
-                resolve(Promise.all(files.map(file => findProc(file)(file))));
+                resolve(
+                    Promise.all(files.map(file => findProc(file)(file)))
+                        .then(() => debug('Processed %d resources', files.length))
+                );
             });
         });
     }
