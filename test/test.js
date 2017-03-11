@@ -10,6 +10,7 @@ const template = require('../src/template');
 const markdown = require('../src/markdown');
 const aggregate = require('../src/aggregate');
 const configs = require('../src/configs');
+const procs = require('../src/processors');
 
 before(() => {
     return require('../src/plugins');
@@ -90,6 +91,23 @@ describe('aggregate', () => {
         fse.removeSync('test/cache');
         return template.string('{{{aggregate "test/agg-input.html" "file" "test/agg-template.html"}}}', {}).then(res => {
             assert.equal(res, fs.readFileSync('test/expected-file-agg.html', 'utf8'));
+        });
+    });
+});
+
+describe('processors', () => {
+    it('should include markdown, template and copy', () => {
+        fse.removeSync('test-out/proc');
+        return procs.run({
+            outputDir: 'test-out/proc',
+            exclude: ['test-out/**', 'coverage/**', 'src/**'],
+            text: 'txt',
+            date: new Date(2017, 9, 8),
+            content: 'c'
+        }).then(() => {
+            assertFileEqual('test-out/proc/test/data.html', 'test/expected-data.html');
+            assertFileEqual('test-out/proc/test/template.html', 'test/expected-file.html');
+            assert.ok(fs.existsSync('test-out/proc/package.json'));
         });
     });
 });

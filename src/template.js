@@ -37,8 +37,9 @@ function resolveFile(file, out, isOutName) {
         fse.mkdirsSync(outParts.dir);
         return path.resolve(outParts.dir, outParts.name + path.extname(file));
     }
-    fse.mkdirsSync(out);
-    return path.resolve(out, file);
+    let outParts = path.parse(path.resolve(out, file));
+    fse.mkdirsSync(outParts.dir);
+    return path.resolve(outParts.dir, outParts.base);
 }
 
 function string(input, data) {

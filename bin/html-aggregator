@@ -5,7 +5,7 @@ var index = require('../src/index');
 require('../src/plugins').then(() => {
     switch (process.argv[2]) {
     case 'build':
-        return index.run();
+        return index.run().catch(err => console.log(chalk.red(err)));
     default:
         console.log('Usage:', chalk.magenta('html-aggregator'), chalk.blue('command'), chalk.red('options'));
         console.log(chalk.blue('markdown'), '       Create HTML from markdown.');

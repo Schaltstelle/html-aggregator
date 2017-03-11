@@ -23,6 +23,7 @@ module.exports = {
         args.parserDir = args.configDir + '/parsers';
         args.cacheDir = args.configDir + '/cache';
         args.pluginDir = args.configDir + '/plugins';
+        args.exclude = Array.isArray(args.exclude) ? args.exclude : (args.exclude || '').split(',');
         return args;
     },
     args: args

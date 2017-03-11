@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const yaml = require('js-yaml');
 const template = require('./template');
+const configs = require('./configs');
 
 module.exports = {
     run: run
@@ -15,7 +16,7 @@ function run(file, outputDir) {
     if (split === null) {
         return Promise.reject('--- not found in ' + file);
     }
-    let data = yaml.safeLoad(raw.substring(0, split.index));
+    let data = Object.assign({}, configs.args, yaml.safeLoad(raw.substring(0, split.index)));
     data.content = marked(raw.substring(split.index + split[0].length));
     return template.file(data.template, data, path.resolve(outputDir, file), true);
 }
