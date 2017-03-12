@@ -43,12 +43,12 @@ describe('template', () => {
 
     describe('file', () => {
         it('should work on file', () => {
-            return template.file('test/template.html', {
+            return template.file('test', 'template.html', {
                 text: 'txt',
                 date: new Date(2017, 9, 8),
                 content: 'c'
             }, 'test-out').then(() => {
-                assertFileEqual('test-out/test/template.html', 'test/expected-file.html');
+                assertFileEqual('test-out/template.html', 'test/expected-file.html');
             });
         });
     });
@@ -65,7 +65,7 @@ describe('plugins', () => {
 describe('markdown', () => {
     describe('run', () => {
         it('should run', () => {
-            return markdown.run('test/data.md', 'test-out').then(() => {
+            return markdown.run('', 'test/data.md', 'test-out').then(() => {
                 assertFileEqual('test-out/test/data.html', 'test/expected-data.html');
             });
         });
@@ -98,7 +98,7 @@ describe('processors', () => {
         fse.removeSync('test-out/proc');
         configs.add({
             outputDir: 'test-out/proc',
-            exclude: ['test-out/**', 'coverage/**', 'src/**','README.md'],
+            exclude: ['test-out/**', 'coverage/**', 'src/**', 'README.md'],
             text: 'txt',
             date: new Date(2017, 9, 8),
             content: 'c'

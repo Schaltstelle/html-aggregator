@@ -21,14 +21,14 @@ module.exports = {
 
 function run() {
     let c = configs.args;
-    return file(c.args[0], c, c.outputDir);
+    return file('', c.args[0], c, c.outputDir);
 }
 
-function file(file, data, out, isOutName) {
-    return string(fs.readFileSync(file, 'utf8'), data).then(output => {
+function file(baseDir, file, data, out, isOutName) {
+    return string(fs.readFileSync(path.resolve(baseDir, file), 'utf8'), data).then(output => {
         let outfile = resolveFile(file, out, isOutName);
         fs.writeFileSync(outfile, output);
-        debug('Wrote', chalk.blue(path.relative('', outfile)));
+        debug('Wrote', chalk.blue(path.relative(baseDir, outfile)));
     });
 }
 

@@ -10,14 +10,15 @@ module.exports = {
     run: run
 };
 
-function run(file, outputDir) {
-    let raw = fs.readFileSync(file, 'utf8');
+function run(baseDir, file, outputDir) {
+    let full = path.resolve(baseDir, file);
+    let raw = fs.readFileSync(full, 'utf8');
     let split = /^---\s*$/m.exec(raw);
     if (split === null) {
-        return Promise.reject('--- not found in ' + file);
+        return Promise.reject('--- not found in ' + full);
     }
     let data = Object.assign({}, configs.args, yaml.safeLoad(raw.substring(0, split.index)));
     data.content = marked(raw.substring(split.index + split[0].length));
-    return template.file(data.template, data, path.resolve(outputDir, file), true);
+    return template.file(baseDir, data.template, data, path.resolve(outputDir, file), true);
 }
 

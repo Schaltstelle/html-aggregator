@@ -62,12 +62,12 @@ function readParsers(dir) {
     return res;
 }
 
-function load(addr, basedir, count) {
+function load(addr, baseDir, count) {
     if (count > 5) {
         return Promise.reject('Too many retries');
     }
     if (addr.substring(0, 4) !== 'http') {
-        let filename = path.resolve(basedir, addr);
+        let filename = path.resolve(baseDir, addr);
         return retrying(readFile(filename));
     }
     return retrying(get(addr));
@@ -76,7 +76,7 @@ function load(addr, basedir, count) {
         return promise.catch((err) => {
             debug(chalk.red(err));
             return new Promise((resolve, reject) => {
-                setTimeout(() => resolve(load(addr, basedir, (count || 0) + 1)), 500);
+                setTimeout(() => resolve(load(addr, baseDir, (count || 0) + 1)), 500);
             });
         });
     }

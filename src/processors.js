@@ -8,16 +8,18 @@ const configs = require('./configs');
 const glob = require('glob');
 const path = require('path');
 const fse = require('fs-extra');
+const chokidar = require('chokidar');
 
 let procs = {};
 
 module.exports = {
     registerProcessor: registerProc,
     run: function () {
-        return new Promise((resolve, reject) => {
+        let ignore = ['node_modules/**', configs.args.outputDir + '/**', '_*/**', '_*'].concat(configs.args.exclude);
+        let build = new Promise((resolve, reject) => {
             glob('**', {
                 nodir: true,
-                ignore: ['node_modules/**', configs.args.outputDir + '/**', '_*/**'].concat(configs.args.exclude)
+                ignore: ignore
             }, (err, files) => {
                 if (err) {
                     reject(err);
@@ -28,15 +30,25 @@ module.exports = {
                 );
             });
         });
+        if (configs.args.watch) {
+            let ignored = ignore.concat(['.*', '.*/**', configs.args.outputDir]);
+            chokidar.watch('', {
+                ignoreInitial: true,
+                ignored: ignored
+            }).on('all', (event, file) => {
+                findProc(file)(file);
+            }).on('error', (err) => debug(err));
+        }
+        return build;
     }
 };
 
 registerProc('\.md$', (file) => {
-    return markdown.run(file, configs.args.outputDir);
+    return markdown.run('', file, configs.args.outputDir);
 });
 
 registerProc('\.html$', (file) => {
-    return template.file(file, configs.args, configs.args.outputDir);
+    return template.file('', file, configs.args, configs.args.outputDir);
 });
 
 function registerProc(name, proc) {
