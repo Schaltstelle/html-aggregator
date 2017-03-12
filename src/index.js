@@ -2,10 +2,14 @@
 const configs = require('./configs');
 const template = require('./template');
 const markdown = require('./markdown');
-const aggregate = require('./aggregate');
 const procs = require('./processors');
 
 module.exports = {
+    init: function (config) {
+        configs.add(config);
+        return require('./plugins');
+    },
+    configs: configs.args,
     addConfig: configs.add,
     templateString: template.string,
     templateFile: template.file,
@@ -13,7 +17,6 @@ module.exports = {
     markdown: markdown.run,
     run: procs.run,
     registerHelper: template.registerHelper,
-    registerParser: aggregate.registerParser,
     registerProcessor: procs.registerProcessor
 };
 

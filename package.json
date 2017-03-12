@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "chalk": "1.1.3",
-    "cheerio": "0.22.0",
     "chokidar": "1.6.1",
     "debug": "2.6.2",
     "fs-extra": "2.0.0",
@@ -28,8 +27,7 @@
     "js-yaml": "3.8.1",
     "marked": "0.3.6",
     "moment": "2.17.1",
-    "promised-handlebars": "2.0.1",
-    "request": "2.81.0"
+    "promised-handlebars": "2.0.1"
   },
   "devDependencies": {
     "istanbul": "0.4.5",

@@ -4,7 +4,6 @@ const debug = require('debug')('processors');
 const chalk = require('chalk');
 const template = require('./template');
 const markdown = require('./markdown');
-const aggregate = require('./aggregate');
 const configs = require('./configs');
 const glob = require('glob');
 const path = require('path');
