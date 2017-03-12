@@ -27,7 +27,7 @@ function run(url, parser, templ, maxLen, config) {
     const templateFile = fs.readFileSync(templ, 'utf8');
     debug('Searching', chalk.blue(url));
     let cache = path.resolve(config.cacheDir, filenameSafe(url));
-    let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, '.');
+    let doLoad = fs.existsSync(cache) ? readFile(cache) : load(url, config.outputDir);
     return doLoad.then(data => {
         fs.writeFileSync(cache, data);
         let info = parse(url, data, parsers[parser], maxLen);

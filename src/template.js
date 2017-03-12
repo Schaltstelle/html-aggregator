@@ -28,7 +28,7 @@ function file(baseDir, file, data, out, isOutName) {
     return string(fs.readFileSync(path.resolve(baseDir, file), 'utf8'), data).then(output => {
         let outfile = resolveFile(file, out, isOutName);
         fs.writeFileSync(outfile, output);
-        debug('Wrote', chalk.blue(path.relative(baseDir, outfile)));
+        debug('Wrote', chalk.green(path.relative(baseDir, outfile)));
     });
 }
 
