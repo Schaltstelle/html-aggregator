@@ -6,7 +6,6 @@ const fs = require('fs');
 const fse = require('fs-extra');
 const promBars = require('promised-handlebars');
 const handlebars = promBars(require('handlebars'));
-const glob = require('glob');
 const configs = require('./configs');
 
 module.exports = {
