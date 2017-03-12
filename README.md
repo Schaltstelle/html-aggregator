@@ -1,44 +1,54 @@
-# html-aggregator
-[![Build Status](https://travis-ci.org/Schaltstelle/html-aggregator.svg?branch=master)](https://travis-ci.org/Schaltstelle/html-aggregator)
-[![codecov](https://codecov.io/gh/Schaltstelle/html-aggregator/graph/badge.svg)](https://codecov.io/gh/Schaltstelle/html-aggregator)
+# simple-site
+[![Build Status](https://travis-ci.org/Schaltstelle/simple-site.svg?branch=master)](https://travis-ci.org/Schaltstelle/simple-site)
+[![codecov](https://codecov.io/gh/Schaltstelle/simple-site/graph/badge.svg)](https://codecov.io/gh/Schaltstelle/simple-site)
 [![License](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Aggregate html snippets from other pages.
+A simple website generator.
 
 ## Usage
-Install with `npm install -g html-aggregator`.
+Install with `npm install -g simple-site`.
 
-Run with `html-aggregator --templateDir=<directory> --output=<file> --maxLen=<number> input files...`.
+Run with `simple-site build`. 
 
-`templateDir` contains json files that define how to extract data from HTML files:
-````json
-{
-    "selectors": {
-        "title": "header.post-header h1",
-        "content": "article.post-content"
-    },
-    "static": {
-        "name": "My Name"
-    }
-}
-````
+## Function
+Simple-site recursively processes all files in the current directory and outputs them into an output directory.
+Depending on the file extension, different actions take place.
+- `*.md` apply the contents to the given template (see below).
+- `*.html` apply possibly existing handlebar `{{...}}` tags.
+- all other files copied into the output directory without any processing.
 
-The values in `selectors` are CSS selectors that are applied to the input HTML files. `static` contains static strings.
+## Templating
+A simple .md file looks like this:
+```yaml
+title: Hello site!
+author: Joe Doe
+date: 2017-03-17
+template: _templates/simple.html
+---
+Here some *markdown* content.
+```
+the corresponding template `simple.html` would be:
+```html
+<body>
+    <h1>{{title}}</h1>
+    {{date}}, {{author}}
+    <br>
+    {{{content}} 
+</body>
+```
 
-`output` is a file defining how to render the scraped data:
-````HTML
-<h1>%title%</h1>
-<div>By %name%</div>
-<div>%content%</div>
-````
-The variables defined in a template are referenced by the expression`%var%`.
+## Configuration
+Configuration parameters can be defined on the command line `simple-site build --outputDir=dist` or in a file named `_config.yaml`.
+All parameters are available in handlebar tags.
+The following parameters exist:
 
-For every occurrence of `<aggregate url="..." template="..."></aggregate>` in every input file
-- the contents of the given URL is fetched
-- the contents is parsed with the given template
-- if the input file name has the form `<name>.html.<ext>`  
-  
-  a new file `<name>.html` is created where all `<aggregate>`s are replaced by the `output` file having its variables replaced.
-  
-  Otherwise, `<aggregate>`'s child nodes are replaced with the `output` file having its variables replaced.
-     
+`outputDir` The output directory. Default: `output`
+
+`configDir` The configuration directory. Default: `_config`
+
+`exclude` File patterns that should excluded from processing (by default all files starting with _ or . are already excluded).
+
+`watch` When present, all files are watched and processed on change, the output directory is served on port 8111.
+
+## Plugins
+All `.js` files in `<outputDir>/plugins` are read and processed at the begin of the process.

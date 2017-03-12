@@ -2,7 +2,7 @@
 if (!process.env.DEBUG) {
     process.env.DEBUG = '*';
 }
-var debug = require('debug')('html-aggregator');
+var debug = require('debug')('simple-site');
 var chalk = require('chalk');
 var index = require('../src/index');
 
@@ -11,7 +11,7 @@ require('../src/plugins').then(() => {
     case 'build':
         return index.run().catch(err => debug(chalk.red(err)));
     default:
-        debug('Usage:', chalk.magenta('html-aggregator'), chalk.blue('command'), chalk.red('options'));
-        debug(chalk.blue('markdown'), '       Create HTML from markdown.');
+        debug('Usage:', chalk.magenta('simple-site'), chalk.blue('command'), chalk.red('options'));
+        debug(chalk.blue('build'), '       Build the site.');
     }
 });
