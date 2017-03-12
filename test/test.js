@@ -75,7 +75,7 @@ describe('markdown', () => {
 describe('aggregate', () => {
     it('should gather data from file', () => {
         fse.removeSync('test/cache');
-        return aggregate.run('test/agg-input.html', 'file', 'test/agg-template.html').then(res => {
+        return aggregate.run('../test/agg-input.html', 'file', 'test/agg-template.html').then(res => {
             assert.equal(res, fs.readFileSync('test/expected-file-agg.html', 'utf8'));
         });
     });
@@ -87,7 +87,7 @@ describe('aggregate', () => {
     });
     it('should work as a helper', () => {
         fse.removeSync('test/cache');
-        return template.string('{{{aggregate "test/agg-input.html" "file" "test/agg-template.html"}}}', {}).then(res => {
+        return template.string('{{{aggregate "../test/agg-input.html" "file" "test/agg-template.html"}}}', {}).then(res => {
             assert.equal(res, fs.readFileSync('test/expected-file-agg.html', 'utf8'));
         });
     });
