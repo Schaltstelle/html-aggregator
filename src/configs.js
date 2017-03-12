@@ -38,10 +38,6 @@ function readArgv() {
 
 function normalize() {
     args.outputDir = args.outputDir || 'output';
-    args.configDir = args.configDir || '_config';
-    args.parserDir = args.configDir + '/parsers';
-    args.cacheDir = args.configDir + '/cache';
-    args.pluginDir = args.configDir + '/plugins';
     args.exclude = Array.isArray(args.exclude) ? args.exclude : (args.exclude || '').split(',');
 }
 

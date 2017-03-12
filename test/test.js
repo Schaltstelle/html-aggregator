@@ -12,7 +12,7 @@ const configs = require('../src/configs');
 const procs = require('../src/processors');
 
 before(() => {
-    index.init({configDir: 'test'});
+    index.init();
 });
 
 describe('template', () => {

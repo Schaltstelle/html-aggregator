@@ -44,11 +44,9 @@ The following parameters exist:
 
 `outputDir` The output directory. Default: `output`
 
-`configDir` The configuration directory. Default: `_config`
-
 `exclude` File patterns that should excluded from processing (by default all files starting with _ or . are already excluded).
 
 `watch` When present, all files are watched and processed on change, the output directory is served on port 8111.
 
 ## Plugins
-All `.js` files in `<outputDir>/plugins` are read and processed at the begin of the process.
+All `.js` files in `_plugins` are read and processed at the begin of the process.

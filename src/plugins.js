@@ -20,7 +20,7 @@ template.registerHelper('noLinks', (data) => {
 });
 
 module.exports = new Promise((resolve, reject) => {
-    glob(configs.args.pluginDir + '/**/*.js', (err, files) => {
+    glob('_plugins/**/*.js', (err, files) => {
         if (err) {
             reject('Problem loading plugins: ' + err);
         } else {
