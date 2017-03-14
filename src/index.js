@@ -11,8 +11,6 @@ module.exports = {
     },
     configs: configs.args,
     addConfig: configs.add,
-    templateString: template.string,
-    templateFile: template.file,
     template: template.run,
     markdown: markdown.run,
     run: procs.run,

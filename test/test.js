@@ -18,44 +18,32 @@ before(() => {
 describe('template', () => {
     describe('string', () => {
         it('should replace simple variables', () => {
-            return template.string('x{{var}}y', {var: 42}).then(res => {
-                assert.equal(res, 'x42y');
+            return template.run('x{{var}}y', {var: 42}).then(res => {
+                assert.equal(res.data, 'x42y');
             });
         });
         it('should format dates', () => {
-            return template.string('x{{formatDate var "DD.MM.YYYY"}}y', {var: new Date(2017, 2, 3)}).then(res => {
-                assert.equal(res, 'x03.03.2017y');
+            return template.run('x{{formatDate var "DD.MM.YYYY"}}y', {var: new Date(2017, 2, 3)}).then(res => {
+                assert.equal(res.data, 'x03.03.2017y');
             });
         });
         it('should remove newlines', () => {
-            return template.string('x{{noNewlines "a\nb\rc\r\nd"}}y', {}).then(res => {
-                assert.equal(res, 'xa b c  dy');
+            return template.run('x{{noNewlines "a\nb\rc\r\nd"}}y', {}).then(res => {
+                assert.equal(res.data, 'xa b c  dy');
             });
         });
         it('should remove link', () => {
-            return template.string('x{{noLinks "a<a>nix</a>-<a href=\'hula\'>hula</a>"}}y', {}).then(res => {
-                assert.equal(res, 'xanix-hulay');
+            return template.run('x{{noLinks "a<a>nix</a>-<a href=\'hula\'>hula</a>"}}y', {}).then(res => {
+                assert.equal(res.data, 'xanix-hulay');
             })
-        });
-    });
-
-    describe('file', () => {
-        it('should work on file', () => {
-            return template.file('test', 'template.html', {
-                text: 'txt',
-                date: new Date(2017, 9, 8),
-                content: 'c'
-            }, 'test-out').then(() => {
-                assertFileEqual('test-out/template.html', 'test/expected-file.html');
-            });
         });
     });
 });
 
 describe('plugins', () => {
     it('should be picked up automatically', () => {
-        return template.string('{{loremIpsum}}').then(res => {
-            assert.equal(res, 'Lorem ipsum dolor sit amet.');
+        return template.run('{{loremIpsum}}').then(res => {
+            assert.equal(res.data, 'Lorem ipsum dolor sit amet.');
         });
     });
 });
@@ -63,8 +51,9 @@ describe('plugins', () => {
 describe('markdown', () => {
     describe('run', () => {
         it('should run', () => {
-            return markdown.run('', 'test/data.md', 'test-out').then(() => {
-                assertFileEqual('test-out/test/data.html', 'test/expected-data.html');
+            return markdown.run(fs.readFileSync('test/data.md', 'utf8'), {}).then(res => {
+                assert.equal(res.data, fs.readFileSync('test/expected-data.html', 'utf8'));
+                assert.equal(res.ext,'.html');
             });
         });
     });
@@ -72,18 +61,18 @@ describe('markdown', () => {
 
 describe('processors', () => {
     it('should include markdown, template and copy', () => {
-        fse.removeSync('test-out/proc');
+        fse.removeSync('test-out');
         configs.add({
-            outputDir: 'test-out/proc',
+            outputDir: 'test-out',
             exclude: ['test-out/**', 'coverage/**', 'src/**', 'README.md'],
             text: 'txt',
             date: new Date(2017, 9, 8),
             content: 'c'
         });
         return procs.run().then(() => {
-            assertFileEqual('test-out/proc/test/data.html', 'test/expected-data.html');
-            assertFileEqual('test-out/proc/test/template.html', 'test/expected-file.html');
-            assert.ok(fs.existsSync('test-out/proc/package.json'));
+            assertFileEqual('test-out/test/data.html', 'test/expected-data.html');
+            assertFileEqual('test-out/test/template.html', 'test/expected-file.html');
+            assert.ok(fs.existsSync('test-out/package.json'));
         });
     });
 });

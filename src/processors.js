@@ -7,11 +7,12 @@ const markdown = require('./markdown');
 const configs = require('./configs');
 const glob = require('glob');
 const path = require('path');
+const fs = require('fs');
 const fse = require('fs-extra');
 const chokidar = require('chokidar');
 const server = require('http-server');
 
-let procs = {};
+let procs = [];
 
 module.exports = {
     registerProcessor: registerProc,
@@ -26,7 +27,7 @@ module.exports = {
                     reject(err);
                 }
                 resolve(Promise.all(
-                    files.map(file => findProc(file)(file, true))).then(() => {
+                    files.map(file => execProc(findProc(file), file))).then(() => {
                         debug('Processed %d resources', files.length);
                         if (configs.args.watch) {
                             serve(8111);
@@ -39,32 +40,35 @@ module.exports = {
     }
 };
 
-registerProc('\.md$', (file) => {
-    return markdown.run('', file, configs.args.outputDir);
+registerProc('Markdown', '\.md$', true, (data) => {
+    return markdown.run(data, configs.args);
 });
 
-registerProc('\.html$', (file) => {
-    return template.file('', file, configs.args, configs.args.outputDir);
+registerProc('Template', '\.html$', true, (data) => {
+    return template.run(data, configs.args);
 });
 
-function registerProc(name, proc) {
-    procs[name] = proc;
+registerProc('Copy', '', false, (data) => {
+    return Promise.resolve(data);
+});
+
+function registerProc(name, test, text, proc) {
+    procs.push({name: name, test: test, text: text, proc: proc});
 }
 
 function findProc(file) {
-    for (let pat in procs) {
-        if (file.match(pat)) {
-            return procs[pat];
-        }
-    }
-    return (file, init) => new Promise((resolve, reject) => {
-        if (!init) {
-            debug('Copy', chalk.green(file));
-        }
-        fse.copy(file, path.resolve(configs.args.outputDir, file), (err) => {
-            if (err) reject(err); else resolve();
-        });
-    });
+    return procs.find(p => file.match(p.test));
+}
+
+function execProc(proc, file) {
+    let data = fs.readFileSync(file, proc.text ? 'utf8' : {});
+    return proc.proc(data).then(res => {
+        let outParts = path.parse(path.resolve(configs.args.outputDir, file));
+        fse.mkdirsSync(outParts.dir);
+        let outName = path.resolve(outParts.dir, outParts.name + (res.ext ? res.ext : outParts.ext));
+        fs.writeFileSync(outName, res.data);
+        debug(proc.name, chalk.blue(file), '->', chalk.green(path.relative('', outName)));
+    }).catch(err => debug(proc.name, chalk.blue(file), chalk.red(err)));
 }
 
 function serve(port) {
@@ -81,6 +85,6 @@ function watch(ignore) {
     }).on('ready', () => {
         debug('Watching for changes...');
     }).on('all', (event, file) => {
-        findProc(file)(file, false);
+        execProc(findProc(file), file);
     }).on('error', (err) => debug(err));
 }
