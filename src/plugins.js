@@ -2,10 +2,12 @@
 const debug = require('debug')('plugins');
 const chalk = require('chalk');
 const template = require('./template');
+const procs = require('./processors');
 const configs = require('./configs');
 const moment = require('moment');
 const glob = require('glob');
 const path = require('path');
+const fs = require('fs');
 
 template.registerHelper('formatDate', (date, format) => {
     return moment(date).format(format);
@@ -17,6 +19,12 @@ template.registerHelper('noNewlines', (data) => {
 
 template.registerHelper('noLinks', (data) => {
     return data ? data.replace(/<a( .*?)?>(.*?)<\/a>/g, '$2') : '';
+});
+
+template.registerHelper('include', function (name, config) {
+    return procs.processorFor(name)
+        .exec(fs.readFileSync(name, 'utf8'), Object.assign({}, this, config.hash))
+        .then(res => res.data);
 });
 
 module.exports = new Promise((resolve, reject) => {
