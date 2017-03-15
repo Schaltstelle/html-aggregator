@@ -27,7 +27,7 @@ registerProc('Markdown', '\.md$', true, markdown.run);
 registerProc('Template', '\.html$', true, template.run);
 
 registerProc('Copy', '', false, (input) => {
-    return Promise.resolve(input);
+    return Promise.resolve({data:input});
 });
 
 function runAll() {
@@ -67,7 +67,7 @@ function findProc(file) {
 
 function execProc(proc, file) {
     let data = fs.readFileSync(file, proc.textInput ? 'utf8' : {});
-    return proc.exec(data, configs.args).then(res => {
+    return proc.exec(data).then(res => {
         let outParts = path.parse(path.resolve(configs.args.outputDir, file));
         fse.mkdirsSync(outParts.dir);
         let outName = path.resolve(outParts.dir, outParts.name + (res.ext ? res.ext : outParts.ext));

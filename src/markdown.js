@@ -11,11 +11,11 @@ module.exports = {
         if (split === null) {
             return Promise.reject('--- not found');
         }
-        let d = Object.assign({}, data, yaml.safeLoad(input.substring(0, split.index)));
-        d.content = marked(input.substring(split.index + split[0].length));
-        let temp = fs.readFileSync(d.template, 'utf8');
-        return template.run(temp, d).then(res => {
-            return {data: res.data, ext: path.extname(d.template)};
+        let fullData = Object.assign({}, yaml.safeLoad(input.substring(0, split.index)), data);
+        fullData.content = marked(input.substring(split.index + split[0].length));
+        let temp = fs.readFileSync(fullData.template, 'utf8');
+        return template.run(temp, fullData).then(res => {
+            return {data: res.data, ext: path.extname(fullData.template)};
         });
     }
 };

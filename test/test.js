@@ -50,10 +50,10 @@ describe('plugins', () => {
 
 describe('markdown', () => {
     describe('run', () => {
-        it('should run', () => {
-            return markdown.run(fs.readFileSync('test/data.md', 'utf8'), {}).then(res => {
-                assert.equal(res.data, fs.readFileSync('test/expected-data.html', 'utf8'));
-                assert.equal(res.ext,'.html');
+        it('should have data priority: parameter > md file > configs', () => {
+            configs.add({stat: 'configs', date: '1970-01-01'});
+            return markdown.run(fs.readFileSync('test/data.md', 'utf8'), {text: 'overwritten'}).then(res => {
+                assert.equal(res.data, 'text:overwritten\ndate:03.02.2017\nstat:configs\n<p>This is content. <em>bold</em></p>\n');
             });
         });
     });
