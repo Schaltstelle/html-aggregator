@@ -16,44 +16,49 @@ let procs = [];
 
 module.exports = {
     registerProcessor: registerProc,
-    run: function () {
-        return new Promise((resolve, reject) => {
-            let ignore = ['node_modules/**', configs.args.outputDir + '/**', '_*/**', '_*'].concat(configs.args.exclude);
-            glob('**', {
-                nodir: true,
-                ignore: ignore
-            }, (err, files) => {
-                if (err) {
-                    reject(err);
-                }
-                resolve(Promise.all(
-                    files.map(file => execProc(findProc(file), file))).then(() => {
-                        debug('Processed %d resources', files.length);
-                        if (configs.args.watch) {
-                            serve(8111);
-                            watch(ignore);
-                        }
-                    })
-                );
-            });
-        });
-    }
+    run: function (file) {
+        return file ? runProc(file) : runAll();
+    },
+    processorFor: findProc
 };
 
-registerProc('Markdown', '\.md$', true, (data) => {
-    return markdown.run(data, configs.args);
+registerProc('Markdown', '\.md$', true, markdown.run);
+
+registerProc('Template', '\.html$', true, template.run);
+
+registerProc('Copy', '', false, (input) => {
+    return Promise.resolve(input);
 });
 
-registerProc('Template', '\.html$', true, (data) => {
-    return template.run(data, configs.args);
-});
+function runAll() {
+    return new Promise((resolve, reject) => {
+        let ignore = ['node_modules/**', configs.args.outputDir + '/**', '_*/**', '_*'].concat(configs.args.exclude);
+        glob('**', {
+            nodir: true,
+            ignore: ignore
+        }, (err, files) => {
+            if (err) {
+                reject(err);
+            }
+            resolve(Promise.all(
+                files.map(file => runProc(file))).then(() => {
+                    debug('Processed %d resources', files.length);
+                    if (configs.args.watch) {
+                        serve(8111);
+                        watch(ignore);
+                    }
+                })
+            );
+        });
+    });
+}
 
-registerProc('Copy', '', false, (data) => {
-    return Promise.resolve(data);
-});
+function registerProc(name, test, textInput, exec) {
+    procs.push({name: name, test: test, textInput: textInput, exec: exec});
+}
 
-function registerProc(name, test, text, proc) {
-    procs.push({name: name, test: test, text: text, proc: proc});
+function runProc(file) {
+    return execProc(findProc(file), file);
 }
 
 function findProc(file) {
@@ -61,8 +66,8 @@ function findProc(file) {
 }
 
 function execProc(proc, file) {
-    let data = fs.readFileSync(file, proc.text ? 'utf8' : {});
-    return proc.proc(data).then(res => {
+    let data = fs.readFileSync(file, proc.textInput ? 'utf8' : {});
+    return proc.exec(data, configs.args).then(res => {
         let outParts = path.parse(path.resolve(configs.args.outputDir, file));
         fse.mkdirsSync(outParts.dir);
         let outName = path.resolve(outParts.dir, outParts.name + (res.ext ? res.ext : outParts.ext));
@@ -85,6 +90,6 @@ function watch(ignore) {
     }).on('ready', () => {
         debug('Watching for changes...');
     }).on('all', (event, file) => {
-        execProc(findProc(file), file);
+        runProc(file);
     }).on('error', (err) => debug(err));
 }

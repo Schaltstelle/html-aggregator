@@ -14,7 +14,7 @@ module.exports = {
     template: template.run,
     markdown: markdown.run,
     run: procs.run,
+    processorFor: procs.processorFor,
     registerHelper: template.registerHelper,
     registerProcessor: procs.registerProcessor
 };
-

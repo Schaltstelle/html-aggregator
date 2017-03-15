@@ -25,7 +25,7 @@ module.exports = new Promise((resolve, reject) => {
             reject('Problem loading plugins: ' + err);
         } else {
             files.forEach(file => {
-                debug('Loading plugin', chalk.magenta(file));
+                debug('Loading', chalk.blue(file));
                 let relFile = path.relative(__dirname, file);
                 require(relFile.substring(0, relFile.length - 3));
             });
