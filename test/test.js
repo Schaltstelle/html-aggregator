@@ -49,11 +49,47 @@ describe('plugins', () => {
 });
 
 describe('markdown', () => {
-    describe('run', () => {
-        it('should have data priority: parameter > md file > configs', () => {
-            configs.add({stat: 'configs', date: '1970-01-01'});
-            return markdown.run(fs.readFileSync('test/data.md', 'utf8'), {text: 'overwritten'}).then(res => {
-                assert.equal(res.data, 'text:overwritten\ndate:03.02.2017\nstat:configs\n<p>This is content. <em>bold</em></p>\n');
+
+    it('should output data when no template is given', () => {
+        return markdown.run(`
+date: 2017-02-05
+text: Some text
+---
+This is content. *bold*`, {text: 'overwritten'})
+            .then(res => {
+                assert.deepEqual(res.data, {
+                    date: new Date(Date.UTC(2017, 1, 5)),
+                    text: 'overwritten',
+                    content: '<p>This is content. <em>bold</em></p>\n'
+                });
+            });
+    });
+
+    it('should output a string when a template is given', () => {
+        configs.add({stat: 'configs', date: '1970-01-01'});
+        return markdown.run(`
+template: stat:{{stat}} - date:{{formatDate date 'DD.MM.YYYY'}} - text:{{text}} - {{{content}}} 
+date: 2017-02-05
+text: Some text
+---
+This is content. *bold*`, {text: 'overwritten'})
+            .then(res => {
+                assert.equal(res.data, 'stat:configs - date:05.02.2017 - text:overwritten - <p>This is content. <em>bold</em></p>\n');
+            });
+    });
+
+    describe('!include', () => {
+        it('includes text files', () => {
+            return markdown.run('inner: !include test/inc.txt\n---\n', {}).then(res => {
+                assert.deepEqual(res.data, {inner: 'hula\nhop', content: ''});
+            });
+        });
+        it('includes and parses yaml files', () => {
+            return markdown.run('inner: !include test/inc.yaml\n---\n', {}).then(res => {
+                assert.deepEqual(res.data, {
+                    inner: {text: 'include', date: new Date(Date.UTC(2017, 10, 4))},
+                    content: ''
+                });
             });
         });
     });

@@ -9,6 +9,21 @@ const glob = require('glob');
 const path = require('path');
 const fs = require('fs');
 
+module.exports = new Promise((resolve, reject) => {
+    glob('_plugins/**/*.js', (err, files) => {
+        if (err) {
+            reject('Problem loading plugins: ' + err);
+        } else {
+            files.forEach(file => {
+                debug('Loading', chalk.blue(file));
+                let relFile = path.relative(__dirname, file);
+                require(relFile.substring(0, relFile.length - 3));
+            });
+            resolve();
+        }
+    });
+});
+
 template.registerHelper('formatDate', (date, format) => {
     return moment(date).format(format);
 });
@@ -25,19 +40,4 @@ template.registerHelper('include', function (name, config) {
     return procs.processorFor(name)
         .exec(fs.readFileSync(name, 'utf8'), Object.assign({}, this, config.hash))
         .then(res => res.data);
-});
-
-module.exports = new Promise((resolve, reject) => {
-    glob('_plugins/**/*.js', (err, files) => {
-        if (err) {
-            reject('Problem loading plugins: ' + err);
-        } else {
-            files.forEach(file => {
-                debug('Loading', chalk.blue(file));
-                let relFile = path.relative(__dirname, file);
-                require(relFile.substring(0, relFile.length - 3));
-            });
-            resolve();
-        }
-    });
 });
