@@ -21,6 +21,7 @@
     "coverage": "istanbul cover _mocha"
   },
   "dependencies": {
+    "async-listener": "0.6.4",
     "chalk": "1.1.3",
     "chokidar": "1.6.1",
     "debug": "2.6.2",
