@@ -33,9 +33,10 @@ function run(input, data) {
     let inputYaml = '%TAG ! tag:ss_schema/\n---\n' + input.substring(0, split.index);
     let fullData = Object.assign({}, yaml.safeLoad(inputYaml, {schema: getSchema()}), data);
     fullData.content = marked(input.substring(split.index + split[0].length));
-    return fullData.template
-        ? template.run(fullData.template, fullData).then(res => {
-            return {data: res.data, ext: '.html'/*path.extname(fullData.template)*/}; //TODO a way to find out extname of !include?
+    let templ = findTemplate(fullData);
+    return templ
+        ? template.run(templ.text, fullData).then(res => {
+            return {data: res.data, ext: templ.ext};
         })
         : Promise.resolve({data: fullData, ext: '.html'});
 }
@@ -50,4 +51,13 @@ function registerTag(name, config) {
 function getSchema() {
     return schema ? schema : yaml.Schema.create(tags.map(tag =>
             new yaml.Type('tag:ss_schema/' + tag.name, tag.config)));
+}
+
+function findTemplate(data) {
+    if (data.template) {
+        return {text: data.template, ext: '.html'}; //TODO a way to find out extname of !include?
+    }
+    if (data.templateFile) {
+        return {text: fs.readFileSync(data.templateFile, 'utf8'), ext: path.extname(data.templateFile)};
+    }
 }

@@ -1,4 +1,4 @@
-template: !include test/template.html
+templateFile: test/template.html
 date: 2017-02-03
 text: Some text
 ---
