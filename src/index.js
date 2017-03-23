@@ -10,12 +10,19 @@ module.exports = {
         return require('./plugins');
     },
     configs: configs.args,
-    addConfig: configs.add,
+    addConfig: chaining(configs.add),
     template: template.run,
     markdown: markdown.run,
     run: procs.run,
     processorFor: procs.processorFor,
-    registerHelper: template.registerHelper,
-    registerProcessor: procs.registerProcessor,
-    registerTag: markdown.registerTag
+    registerHelper: chaining(template.registerHelper),
+    registerProcessor: chaining(procs.registerProcessor),
+    registerTag: chaining(markdown.registerTag)
 };
+
+function chaining(func) {
+    return function () {
+        func.apply(null, arguments);
+        return module.exports;
+    };
+}
