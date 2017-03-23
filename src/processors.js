@@ -22,17 +22,17 @@ module.exports = {
     processorFor: findProc
 };
 
-registerProc('Markdown', '\.md$', true, markdown.run);
+registerProc('Markdown', '\.(md|yml|yaml)$', true, markdown.run);
 
 registerProc('Template', '\.html$', true, template.run);
 
 registerProc('Copy', '', false, (input) => {
-    return Promise.resolve({data:input});
+    return Promise.resolve({data: input});
 });
 
 function runAll() {
     return new Promise((resolve, reject) => {
-        let ignore = ['node_modules/**', configs.args.outputDir + '/**', '_*/**', '_*'].concat(configs.args.exclude);
+        let ignore = ['node_modules/**', configs.args.outputDir + '/**', '**/_*/**', '**/_*'].concat(configs.args.exclude);
         glob('**', {
             nodir: true,
             ignore: ignore
@@ -58,6 +58,7 @@ function registerProc(name, test, textInput, exec) {
 }
 
 function runProc(file) {
+    //TODO fails on delete event
     return execProc(findProc(file), file);
 }
 
@@ -83,7 +84,7 @@ function serve(port) {
 }
 
 function watch(ignore) {
-    let ignored = ignore.concat(['.*', '.*/**', configs.args.outputDir]);
+    let ignored = ignore.concat(['**/.*', '**/.*/**', configs.args.outputDir]);
     chokidar.watch('', {
         ignoreInitial: true,
         ignored: ignored

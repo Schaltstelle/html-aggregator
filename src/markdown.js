@@ -27,12 +27,12 @@ registerTag('include', {
 
 function run(input, data) {
     let split = /^---\s*$/m.exec(input);
-    if (split === null) {
-        return Promise.reject('--- not found');
-    }
-    let inputYaml = '%TAG ! tag:ss_schema/\n---\n' + input.substring(0, split.index);
+    let parts = (split === null)
+        ? [input, '']
+        : [input.substring(0, split.index), input.substring(split.index + split[0].length)];
+    let inputYaml = '%TAG ! tag:ss_schema/\n---\n' + parts[0];
     let fullData = Object.assign({}, yaml.safeLoad(inputYaml, {schema: getSchema()}), data);
-    fullData.content = marked(input.substring(split.index + split[0].length));
+    fullData.content = marked(parts[1]);
     let templ = findTemplate(fullData);
     return templ
         ? template.run(templ.text, fullData).then(res => {
