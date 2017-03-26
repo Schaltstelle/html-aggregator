@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-const yaml = require('js-yaml');
+const yaml = require('./yaml');
 
 let args = {args: [], env: process.env};
 readFile('_config.yaml');
@@ -19,7 +19,7 @@ module.exports = {
 
 function readFile(file) {
     if (fs.existsSync(file)) {
-        Object.assign(args, yaml.safeLoad(fs.readFileSync(file, 'utf8')));
+        Object.assign(args, yaml.load(fs.readFileSync(file, 'utf8')));
     }
 }
 

@@ -2,6 +2,7 @@
 const configs = require('./configs');
 const template = require('./template');
 const markdown = require('./markdown');
+const yaml = require('./yaml');
 const procs = require('./processors');
 
 module.exports = {
@@ -13,11 +14,12 @@ module.exports = {
     addConfig: chaining(configs.add),
     template: template.run,
     markdown: markdown.run,
+    loadYaml: yaml.load,
     run: procs.run,
     processorFor: procs.processorFor,
     registerHelper: chaining(template.registerHelper),
     registerProcessor: chaining(procs.registerProcessor),
-    registerTag: chaining(markdown.registerTag)
+    registerTag: chaining(yaml.registerTag)
 };
 
 function chaining(func) {

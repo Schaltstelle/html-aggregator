@@ -2,6 +2,10 @@
 
 process.env.DEBUG = '*';
 
+process.argv.push('simple');
+process.argv.push('--boolean');
+process.argv.push('--flag=value');
+
 const assert = require('assert');
 const fs = require('fs');
 const fse = require('fs-extra');
@@ -15,27 +19,47 @@ before(() => {
     index.init();
 });
 
+describe('configs', () => {
+    it('should parse argv', () => {
+        let c = configs.args;
+        assert.deepEqual(c.args, ['simple']);
+        assert.equal(c.env.PATH !== undefined, true);
+        assert.equal(c.boolean, true);
+        assert.equal(c.flag, 'value');
+    });
+});
+
 describe('template', () => {
-    describe('string', () => {
-        it('should replace simple variables', () => {
-            return template.run('x{{var}}y', {var: 42}).then(res => {
-                assert.equal(res.data, 'x42y');
+    it('should replace simple variables', () => {
+        return template.run('x{{var}}y', {var: 42}).then(res => {
+            assert.equal(res.data, 'x42y');
+        });
+    });
+    it('should format dates', () => {
+        return template.run('x{{formatDate var "DD.MM.YYYY"}}y', {var: new Date(2017, 2, 3)}).then(res => {
+            assert.equal(res.data, 'x03.03.2017y');
+        });
+    });
+    it('should remove newlines', () => {
+        return template.run('x{{noNewlines "a\nb\rc\r\nd"}}y', {}).then(res => {
+            assert.equal(res.data, 'xa b c  dy');
+        });
+    });
+    it('should remove link', () => {
+        return template.run('x{{noLinks "a<a>nix</a>-<a href=\'hula\'>hula</a>"}}y', {}).then(res => {
+            assert.equal(res.data, 'xanix-hulay');
+        });
+    });
+    describe('include', () => {
+        it('should include text files', () => {
+            return template.run('x{{include "test/inc.txt"}}y', {}).then(res => {
+                assert.equal(res.data, 'xhula\nhopy');
             });
         });
-        it('should format dates', () => {
-            return template.run('x{{formatDate var "DD.MM.YYYY"}}y', {var: new Date(2017, 2, 3)}).then(res => {
-                assert.equal(res.data, 'x03.03.2017y');
+        it('should include processed md files', () => {
+            return template.run('{{{include "test/data.md"}}}', {stat: 'configs'}).then(res => {
+                assert.equal(res.data, fs.readFileSync('test/expected-data.html', 'utf8'));
             });
-        });
-        it('should remove newlines', () => {
-            return template.run('x{{noNewlines "a\nb\rc\r\nd"}}y', {}).then(res => {
-                assert.equal(res.data, 'xa b c  dy');
-            });
-        });
-        it('should remove link', () => {
-            return template.run('x{{noLinks "a<a>nix</a>-<a href=\'hula\'>hula</a>"}}y', {}).then(res => {
-                assert.equal(res.data, 'xanix-hulay');
-            })
         });
     });
 });
