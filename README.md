@@ -36,6 +36,7 @@ the corresponding template `simple.html` would be:
     {{{content}} 
 </body>
 ```
+{{...}} are [handlebars](http://handlebarsjs.com/) expressions which reference the data from the .md file.
 
 ## Configuration
 Configuration parameters can be defined on the command line `simple-site build --outputDir=dist` or in a file named `_config.yaml`.
