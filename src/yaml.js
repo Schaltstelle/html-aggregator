@@ -9,6 +9,7 @@ let schema;
 
 module.exports = {
     load: load,
+    loadSync: loadSync,
     registerTag: registerTag
 };
 
@@ -20,11 +21,19 @@ registerTag('include', {
     construct: data => {
         let inc = fs.readFileSync(data, 'utf8');
         return (path.extname(data) === '.yaml' || path.extname(data) === '.yml')
-            ? load(inc) : inc;
+            ? loadSync(inc) : inc;
     }
 });
 
 function load(input) {
+    try {
+        return Promise.resolve(loadSync(input));
+    } catch (e) {
+        return Promise.reject(e);
+    }
+}
+
+function loadSync(input) {
     return yaml.safeLoad('%TAG ! tag:ss_schema/\n---\n' + input, {schema: getSchema()});
 }
 

@@ -14,16 +14,17 @@ function run(input, data) {
     let parts = (split === null)
         ? [input, '']
         : [input.substring(0, split.index), input.substring(split.index + split[0].length)];
-    let fullData = Object.assign({}, yaml.load(parts[0]), data);
-    fullData.content = marked(parts[1]);
-    let templ = findTemplate(fullData);
-    return templ
-        ? template.run(templ.text, fullData).then(res => {
-            return {data: res.data, ext: templ.ext};
-        })
-        : Promise.resolve({data: fullData, ext: '.html'});
+    return yaml.load(parts[0]).then(y => {
+        let fullData = Object.assign({}, y, data);
+        fullData.content = marked(parts[1]);
+        let templ = findTemplate(fullData);
+        return templ
+            ? template.run(templ.text, fullData).then(res => {
+                return {data: res.data, ext: templ.ext};
+            })
+            : {data: fullData, ext: '.html'};
+    });
 }
-
 
 function findTemplate(data) {
     if (data.template) {

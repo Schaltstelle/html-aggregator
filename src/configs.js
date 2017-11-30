@@ -19,7 +19,7 @@ module.exports = {
 
 function readFile(file) {
     if (fs.existsSync(file)) {
-        Object.assign(args, yaml.load(fs.readFileSync(file, 'utf8')));
+        Object.assign(args, yaml.loadSync(fs.readFileSync(file, 'utf8')));
     }
 }
 

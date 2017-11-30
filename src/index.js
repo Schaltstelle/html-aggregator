@@ -15,6 +15,7 @@ module.exports = {
     template: template.run,
     markdown: markdown.run,
     loadYaml: yaml.load,
+    loadYamlSync: yaml.loadSync,
     run: procs.run,
     processorFor: procs.processorFor,
     registerHelper: chaining(template.registerHelper),
