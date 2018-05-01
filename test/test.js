@@ -45,6 +45,11 @@ describe('template', () => {
             assert.equal(res.data, 'xa b c  dy');
         });
     });
+    it('should remove tags', () => {
+        return template.run('{{noTags (noNewlines "practice <em class=\'markup--em markup--p-em\'>Everything\nas Code</em>? This<img/>")}}', {}).then(res => {
+            assert.equal(res.data, 'practice Everything as Code? This');
+        });
+    });
     it('should remove link', () => {
         return template.run('x{{noLinks "a<a>nix</a>-<a href=\'hula\'>hula</a>"}}y', {}).then(res => {
             assert.equal(res.data, 'xanix-hulay');

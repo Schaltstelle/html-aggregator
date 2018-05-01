@@ -36,6 +36,10 @@ template.registerHelper('noLinks', (data) => {
     return data ? data.replace(/<a( .*?)?>(.*?)<\/a>/g, '$2') : '';
 });
 
+template.registerHelper('noTags', (data) => {
+    return data ? data.replace(/<(.*?)( .*?)?>(.*?)<\/\1>/g, '$3').replace(/<(.*?)\/>/g,'') : '';
+});
+
 template.registerHelper('include', function (name, config) {
     return procs.processorFor(name)
         .exec(fs.readFileSync(name, 'utf8'), Object.assign({}, this, config.hash))
