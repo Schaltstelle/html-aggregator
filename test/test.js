@@ -16,7 +16,7 @@ const configs = require('../src/configs');
 const procs = require('../src/processors');
 
 before(() => {
-    index.init();
+    index.init().then(() => console.log('inited'), e => console.log('not inited',e));
 });
 
 describe('configs', () => {

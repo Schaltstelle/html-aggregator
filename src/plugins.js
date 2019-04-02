@@ -14,12 +14,16 @@ module.exports = new Promise((resolve, reject) => {
         if (err) {
             reject('Problem loading plugins: ' + err);
         } else {
-            files.forEach(file => {
+            Promise.all(files.map(file => {
                 debug('Loading', chalk.blue(file));
                 let relFile = path.relative(__dirname, file);
-                require(relFile.substring(0, relFile.length - 3));
-            });
-            resolve();
+                try {
+                    let res = require(relFile.substring(0, relFile.length - 3));
+                    return res.then ? res : Promise.resolve();
+                } catch(e) {
+                    return Promise.reject(e);
+                }
+            })).then(resolve, reject);
         }
     });
 });
