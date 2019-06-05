@@ -67,14 +67,19 @@ function findProc(file) {
 }
 
 function execProc(proc, file) {
-    let data = fs.readFileSync(file, proc.textInput ? 'utf8' : {});
-    return proc.exec(data).then(res => {
-        let outParts = path.parse(path.resolve(configs.args.outputDir, file));
-        fse.mkdirsSync(outParts.dir);
-        let outName = path.resolve(outParts.dir, outParts.name + (res.ext ? res.ext : outParts.ext));
-        fs.writeFileSync(outName, res.data);
-        debug(proc.name, chalk.blue(file), '->', chalk.green(path.relative('', outName)));
-    }).catch(err => debug(proc.name, chalk.blue(file), chalk.red(err)));
+    let data = fs.readFileSync(file, proc.textInput ? 'utf8' : {})
+    return proc.exec(data)
+        .then(res => {
+            let outParts = path.parse(path.resolve(configs.args.outputDir, file))
+            fse.mkdirsSync(outParts.dir)
+            let outName = path.resolve(outParts.dir, outParts.name + (res.ext ? res.ext : outParts.ext))
+            fs.writeFileSync(outName, res.data)
+            debug(proc.name, chalk.blue(file), '->', chalk.green(path.relative('', outName)))
+        })
+        .catch(err => {
+            debug(proc.name, chalk.blue(file), chalk.red(err))
+            return Promise.reject(err)
+        })
 }
 
 function serve(port) {

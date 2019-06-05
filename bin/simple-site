@@ -10,12 +10,13 @@ require('../src/plugins')
     .then(() => {
         switch (process.argv[2]) {
         case 'build':
-            return index.run().catch(err => debug(chalk.red(err)));
+            return index.run();
         default:
             debug('Usage:', chalk.magenta('simple-site'), chalk.blue('command'), chalk.red('options'));
             debug(chalk.blue('build'), '       Build the site.');
         }
     })
     .catch(e => {
-        debug(chalk.red('Problem running simple site', e))
+        debug(chalk.red('Problem running simple site'), e)
+        process.exit(1);
     })
