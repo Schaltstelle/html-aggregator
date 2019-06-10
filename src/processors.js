@@ -28,25 +28,35 @@ registerProc('Template', '\.html$', template.run, {priority: -100})
 
 registerProc('Copy', '', input => Promise.resolve({data: input}), {binaryInput: true, priority: -200})
 
-function runAll() {
+function runAll(stats) {
+    stats = stats || {}
     return new Promise((resolve, reject) => {
+        let statCache = {}
         let ignore = ['node_modules/**', configs.args.outputDir + '/**'].concat(configs.args.exclude)
         glob('**', {
             nodir: true,
-            ignore: ignore
+            ignore: ignore,
+            statCache
         }, (err, files) => {
             if (err) {
                 reject(err)
             }
-            resolve(Promise.all(
-                files.map(file => runProc(file))).then(() => {
-                    debug('Processed %d resources', files.length)
-                    if (configs.args.watch) {
-                        serve(8111)
-                        watch(ignore)
-                    }
-                })
-            )
+            let changed = files.filter(file => {
+                let absolute = process.cwd() + '/' + file
+                return !stats[absolute] || statCache[absolute].mtimeMs > stats[absolute].mtimeMs
+            })
+            if (changed.length === 0) {
+                debug('Found no more changed resources')
+                if (configs.args.watch) {
+                    serve(8111)
+                    watch(ignore)
+                }
+                resolve()
+            } else {
+                debug('Found %d changed resources', changed.length)
+                let procs = changed.map(file => runProc(file))
+                resolve(Promise.all(procs).then(() => runAll(statCache)))
+            }
         })
     })
 }
@@ -59,7 +69,8 @@ function registerProc(name, test, exec, options) {
 function runProc(file) {
     //TODO fails on delete event
     let proc = findProc(file)
-    return !proc.underscoreFiles && (file.substring(0,1)==='_' || file.indexOf('/_')>=0) ? Promise.resolve('ignored') : execProc(proc, file)
+    let ignore = !proc.underscoreFiles && (file.substring(0, 1) === '_' || file.indexOf('/_') >= 0)
+    return ignore ? Promise.resolve('ignored') : execProc(proc, file)
 }
 
 function findProc(file) {
