@@ -29,10 +29,9 @@ registerProc('Template', '\.html$', template.run, {priority: -100})
 registerProc('Copy', '', input => Promise.resolve({data: input}), {binaryInput: true, priority: -200})
 
 function runAll(stats) {
-    stats = stats || {}
+    let ignore = ['node_modules/**', configs.args.outputDir + '/**'].concat(configs.args.exclude)
     return new Promise((resolve, reject) => {
         let statCache = {}
-        let ignore = ['node_modules/**', configs.args.outputDir + '/**'].concat(configs.args.exclude)
         glob('**', {
             nodir: true,
             ignore: ignore,
@@ -40,25 +39,34 @@ function runAll(stats) {
         }, (err, files) => {
             if (err) {
                 reject(err)
-            }
-            let changed = files.filter(file => {
-                let absolute = process.cwd() + '/' + file
-                return !stats[absolute] || statCache[absolute].mtimeMs > stats[absolute].mtimeMs
-            })
-            if (changed.length === 0) {
-                debug('Found no more changed resources')
-                if (configs.args.watch) {
-                    serve(8111)
-                    watch(ignore)
-                }
-                resolve()
             } else {
-                debug('Found %d changed resources', changed.length)
-                let procs = changed.map(file => runProc(file))
-                resolve(Promise.all(procs).then(() => runAll(statCache)))
+                resolve(runProcs(files, statCache))
             }
         })
     })
+
+    function runProcs(files, newStats) {
+        let changed = files.filter(file => {
+            let absolute = process.cwd() + '/' + file
+            let modified = !stats || !stats[absolute] || newStats[absolute].mtimeMs > stats[absolute].mtimeMs
+            return modified && !findProc(file).lastPass
+        })
+        if (changed.length === 0) {
+            let lastPasses = files
+                .filter(file => findProc(file).lastPass)
+                .map(file => runProc(file))
+            return Promise.all(lastPasses).then(() => {
+                debug('Found no more changed resources')
+                if (configs.args.watch) {
+                    serve(configs.args.port)
+                    watch(ignore)
+                }
+            })
+        }
+        debug('Found %d changed resources', changed.length)
+        let procs = changed.map(file => runProc(file))
+        return Promise.all(procs).then(() => runAll(newStats))
+    }
 }
 
 function registerProc(name, test, exec, options) {
@@ -110,9 +118,8 @@ function watch(ignore) {
     chokidar.watch('', {
         ignoreInitial: true,
         ignored: ignored
-    }).on('ready', () => {
-        debug('Watching for changes...')
-    }).on('all', (event, file) => {
-        runProc(file)
-    }).on('error', (err) => debug(err))
+    })
+        .on('ready', () => debug('Watching for changes...'))
+        .on('all', (event, file) => runProc(file))
+        .on('error', err => debug(err))
 }
