@@ -14,7 +14,7 @@ module.exports = {
         normalize()
         return args
     },
-    args: args
+    args
 }
 
 function readFile(file) {

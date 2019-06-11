@@ -8,9 +8,9 @@ let tags = [];
 let schema;
 
 module.exports = {
-    load: load,
-    loadSync: loadSync,
-    registerTag: registerTag
+    load,
+    loadSync,
+    registerTag
 };
 
 registerTag('include', {

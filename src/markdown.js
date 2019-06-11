@@ -6,17 +6,12 @@ const yaml = require('./yaml')
 const template = require('./template')
 
 module.exports = {
-    run: run
+    run,
+    load
 }
 
 function run(input, data) {
-    let split = /^---\s*$/m.exec(input)
-    let parts = (split === null)
-        ? [input, '']
-        : [input.substring(0, split.index), input.substring(split.index + split[0].length)]
-    return yaml.load(parts[0]).then(y => {
-        let fullData = Object.assign({}, y, data)
-        fullData.content = marked(parts[1])
+    return load(input, data).then(fullData => {
         let templ = findTemplate(fullData)
         return templ
             ? template.run(templ.text, fullData).then(res => {
@@ -24,6 +19,16 @@ function run(input, data) {
             })
             : {data: fullData, path: fullData.path, ext: '.html'}
     })
+}
+
+function load(input, data) {
+    let split = /^---\s*$/m.exec(input)
+    let parts = (split === null)
+        ? [input, '']
+        : [input.substring(0, split.index), input.substring(split.index + split[0].length)]
+    return yaml.load(parts[0]).then(y =>
+        Object.assign({}, y, data, {content: marked(parts[1])})
+    )
 }
 
 function findTemplate(data) {

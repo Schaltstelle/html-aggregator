@@ -15,6 +15,7 @@ const server = require('http-server')
 let procs = []
 
 module.exports = {
+    globPromise,
     registerProcessor: registerProc,
     run: function (file) {
         return file ? runProc(file) : runAll()
@@ -30,20 +31,12 @@ registerProc('Copy', '', input => Promise.resolve({data: input}), {binaryInput: 
 
 function runAll(stats) {
     let ignore = ['node_modules/**', configs.args.outputDir + '/**'].concat(configs.args.exclude)
-    return new Promise((resolve, reject) => {
-        let statCache = {}
-        glob('**', {
-            nodir: true,
-            ignore: ignore,
-            statCache
-        }, (err, files) => {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(runProcs(files, statCache))
-            }
-        })
-    })
+    let statCache = {}
+    return globPromise('**', {
+        nodir: true,
+        ignore: ignore,
+        statCache
+    }).then(files => runProcs(files, statCache))
 
     function runProcs(files, newStats) {
         let changed = files.filter(file => {
@@ -67,6 +60,18 @@ function runAll(stats) {
         let procs = changed.map(file => runProc(file))
         return Promise.all(procs).then(() => runAll(newStats))
     }
+}
+
+function globPromise(pattern, options) {
+    return new Promise((resolve, reject) => {
+        glob(pattern, options, (err, files) => {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(files)
+            }
+        })
+    })
 }
 
 function registerProc(name, test, exec, options) {
