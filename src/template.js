@@ -1,4 +1,5 @@
 'use strict'
+
 const promBars = require('promised-handlebars')
 const handlebars = promBars(require('handlebars'))
 const configs = require('./configs')
@@ -17,4 +18,3 @@ module.exports = {
         }
     }
 }
-

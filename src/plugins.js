@@ -1,13 +1,16 @@
 'use strict'
+
 const debug = require('debug')('plugins')
 const chalk = require('chalk')
-const template = require('./template')
-const markdown = require('./markdown')
-const procs = require('./processors')
 const moment = require('moment')
 const glob = require('glob')
 const path = require('path')
 const fs = require('fs')
+
+const template = require('./template')
+const markdown = require('./markdown')
+const procs = require('./processors')
+const files = require('./files')
 
 module.exports = procs.globPromise('_plugins/**/*.js').then(files =>
     Promise.all(files.map(file => {
@@ -33,7 +36,7 @@ template.registerHelper('include', function (name, config) {
 
 template.registerHelper('globYaml', data => {
     let patterns = Array.isArray(data) ? data : data.split(' ')
-    return Promise.all(patterns.map(pattern => procs.globPromise(pattern)))
+    return Promise.all(patterns.map(pattern => files.glob(pattern)))
         .then(filesList =>
             Promise.all(arrayFlat(filesList).map(file =>
                 ({file, data: markdown.load(fs.readFileSync(file, 'utf-8'))}))))

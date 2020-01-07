@@ -2,20 +2,20 @@
 
 const debug = require('debug')('processors')
 const chalk = require('chalk')
-const template = require('./template')
-const markdown = require('./markdown')
-const configs = require('./configs')
-const glob = require('glob')
 const path = require('path')
 const fs = require('fs')
 const fse = require('fs-extra')
 const chokidar = require('chokidar')
 const server = require('live-server')
 
+const template = require('./template')
+const markdown = require('./markdown')
+const configs = require('./configs')
+const files = require('./files')
+
 let procs = []
 
 module.exports = {
-    globPromise,
     registerProcessor: registerProc,
     run: function (file) {
         return file ? runProc(file) : runAll()
@@ -27,12 +27,12 @@ registerProc('Markdown', '\.(md|yml|yaml)$', markdown.run, {priority: -100})
 
 registerProc('Template', '\.html$', template.run, {priority: -100})
 
-registerProc('Copy', '', input => Promise.resolve({data: input}), {binaryInput: true, priority: -200})
+registerProc('Copy', '', input => Promise.resolve({data: input}), {format: 'binary', priority: -200})
 
 function runAll(stats) {
     let ignore = ['node_modules/**', configs.args.outputDir + '/**'].concat(configs.args.exclude)
     let statCache = {}
-    return globPromise('**', {
+    return files.glob('**', {
         nodir: true,
         ignore: ignore,
         statCache
@@ -62,18 +62,6 @@ function runAll(stats) {
     }
 }
 
-function globPromise(pattern, options) {
-    return new Promise((resolve, reject) => {
-        glob(pattern, options, (err, files) => {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(files)
-            }
-        })
-    })
-}
-
 function registerProc(name, test, exec, options) {
     procs.push({name, test, exec, priority: 0, ...options})
     procs.sort((a, b) => a.priority < b.priority ? 1 : a.priority > b.priority ? -1 : 0)
@@ -91,8 +79,8 @@ function findProc(file) {
 }
 
 function execProc(proc, file) {
-    let data = fs.readFileSync(file, proc.binaryInput ? {} : 'utf8')
-    return proc.exec(data)
+    files.readFileWithFormat(file, proc.format || 'text')
+        .then(data => proc.exec(data))
         .then(res => {
             let outPath = file
             if (res.path) {

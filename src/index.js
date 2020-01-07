@@ -1,4 +1,5 @@
 'use strict'
+
 const configs = require('./configs')
 const template = require('./template')
 const markdown = require('./markdown')
