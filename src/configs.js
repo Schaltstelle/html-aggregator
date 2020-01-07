@@ -24,7 +24,7 @@ function readFile(file) {
 }
 
 function readArgv() {
-    let start = endsWith(process.argv[1], '_mocha') ? 2 : 3
+    let start = endsWith(process.argv[1], 'mocha') ? 2 : 3
     for (let i = start; i < process.argv.length; i++) {
         let arg = process.argv[i]
         if (arg.substring(0, 2) === '--') {
