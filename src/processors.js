@@ -118,7 +118,7 @@ function serve(port, reload) {
         root: configs.args.outputDir,
         logLevel: 0,
         wait: reload,
-        ignorePattern: reload < 0 ? '.*' : undefined,
+        ignorePattern: reload < 0 ? '**/*' : undefined,
         open: false
     })
     debug('Serving at', chalk.blue.underline('http://localhost:' + port))
