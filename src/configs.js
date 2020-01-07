@@ -39,7 +39,21 @@ function readArgv() {
 function normalize() {
     args.outputDir = args.outputDir || 'output'
     args.exclude = Array.isArray(args.exclude) ? args.exclude : (args.exclude || '').split(',')
-    args.port = args.port || 8111
+    args.port = +args.port || 8111
+    args.reload = parseReload()
+}
+
+function parseReload() {
+    switch (args.reload) {
+    case undefined:
+    case true:
+    case 'true':
+        return 1000
+    case 'false':
+        return -1
+    default:
+        return +args.reload
+    }
 }
 
 function endsWith(s, end) {

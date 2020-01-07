@@ -10,7 +10,7 @@ const path = require('path')
 const fs = require('fs')
 const fse = require('fs-extra')
 const chokidar = require('chokidar')
-const server = require('http-server')
+const server = require('live-server')
 
 let procs = []
 
@@ -51,7 +51,7 @@ function runAll(stats) {
             return Promise.all(lastPasses).then(() => {
                 debug('Found no more changed resources')
                 if (configs.args.watch) {
-                    serve(configs.args.port)
+                    serve(configs.args.port, configs.args.reload)
                     watch(ignore)
                 }
             })
@@ -112,10 +112,16 @@ function execProc(proc, file) {
         })
 }
 
-function serve(port) {
-    server.createServer({root: configs.args.outputDir, cache: -1}).listen(port, '127.0.0.1', () => {
-        debug('Serving at', chalk.blue.underline('http://localhost:' + port))
+function serve(port, reload) {
+    server.start({
+        port,
+        root: configs.args.outputDir,
+        logLevel: 0,
+        wait: reload,
+        ignorePattern: reload < 0 ? '.*' : undefined,
+        open: false
     })
+    debug('Serving at', chalk.blue.underline('http://localhost:' + port))
 }
 
 function watch(ignore) {
