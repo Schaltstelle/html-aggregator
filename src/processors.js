@@ -27,7 +27,7 @@ registerProc('Markdown', '**/*.(md|yml|yaml)', markdown.run, {priority: -100})
 
 registerProc('Template', '**/*.html', template.run, {priority: -100})
 
-registerProc('Copy', '**/*', input => Promise.resolve({data: input}), {format: 'binary', priority: -200})
+registerProc('Copy', '**/*', input => Promise.resolve({data: input}), {single: true, format: 'binary', priority: -200})
 
 function runAll(stats) {
     let ignore = ['node_modules/**', configs.args.outputDir + '/**'].concat(configs.args.exclude)
@@ -60,6 +60,18 @@ function runAll(stats) {
     }
 }
 
+/**
+ *
+ * @param name
+ * @param test
+ * @param exec
+ * @param options
+ *  format: in which format the file is read ('binary', 'text', 'file')
+ *  underscoreFiles: if true, accept also files/directories starting with _
+ *  priority: the higher, the earlier a processor is run <br>
+ *  lastPass: if true, this processor runs last
+ *  single: this processor runs only if no other processor run before on the file
+ */
 function registerProc(name, test, exec, options) {
     procs.push({
         name,
@@ -73,13 +85,17 @@ function registerProc(name, test, exec, options) {
 }
 
 function findProcs(file, lastPass) {
-    return procs.filter(p => (lastPass === undefined ? true : lastPass === !!p.lastPass) && p.test(file))
+    return procs.filter(proc => (lastPass === undefined ? true : lastPass === !!proc.lastPass) && proc.test(file))
 }
 
 function runProcs(file, lastPass) {
+    let found = false
     return Promise.all(findProcs(file, lastPass).map(proc => {
-        let ignore = !proc.underscoreFiles && hasUnderscore(file)
-        return ignore ? Promise.resolve('ignored') : execProc(proc, file)
+        if ((!proc.underscoreFiles && hasUnderscore(file)) || (proc.single && found)) {
+            return Promise.resolve('ignored')
+        }
+        found = true
+        return execProc(proc, file)
     }))
 }
 
