@@ -104,7 +104,7 @@ function hasUnderscore(file) {
 }
 
 function execProc(proc, file) {
-    files.readFileWithFormat(file, proc.format || 'text')
+    return files.readFileWithFormat(file, proc.format || 'text')
         .then(data => proc.exec(data))
         .then(res => {
             let outPath = file
