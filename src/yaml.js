@@ -8,16 +8,12 @@ let tags = []
 let schema
 
 module.exports = {
-    load,
-    loadSync,
-    registerTag
+    load, loadSync, registerTag
 }
 
 registerTag('include', {
     kind: 'scalar',
-    resolve: data => {
-        return fs.existsSync(data)
-    },
+    resolve: data => fs.existsSync(data),
     construct: data => {
         let inc = fs.readFileSync(data, 'utf8')
         return (path.extname(data) === '.yaml' || path.extname(data) === '.yml')

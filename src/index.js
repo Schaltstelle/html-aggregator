@@ -19,7 +19,7 @@ module.exports = {
     loadYaml: yaml.load,
     loadYamlSync: yaml.loadSync,
     run: procs.run,
-    processorFor: procs.processorFor,
+    processorsFor: procs.processorsFor,
     registerHelper: chaining(template.registerHelper),
     registerProcessor: chaining(procs.registerProcessor),
     registerTag: chaining(yaml.registerTag)

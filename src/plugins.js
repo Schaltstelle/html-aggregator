@@ -12,7 +12,7 @@ const markdown = require('./markdown')
 const procs = require('./processors')
 const files = require('./files')
 
-module.exports = procs.globPromise('_plugins/**/*.js').then(files =>
+module.exports = files.glob('_plugins/**/*.js').then(files =>
     Promise.all(files.map(file => {
         debug('Loading', chalk.blue(file))
         let relFile = path.relative(__dirname, file)
@@ -29,9 +29,9 @@ template.registerHelper('noLinks', data => data ? data.replace(/<a( .*?)?>(.*?)<
 template.registerHelper('noTags', data => data ? data.replace(/<(.*?)( .*?)?>(.*?)<\/\1>/g, '$3').replace(/<(.*?)\/>/g, '') : '')
 
 template.registerHelper('include', function (name, config) {
-    return procs.processorFor(name)
-        .exec(fs.readFileSync(name, 'utf8'), Object.assign({}, this, config.hash))
-        .then(res => res.data)
+    return procs.processorsFor(name)[0]
+    .exec(fs.readFileSync(name, 'utf8'), Object.assign({}, this, config.hash))
+    .then(res => res.data)
 })
 
 template.registerHelper('globYaml', data => {

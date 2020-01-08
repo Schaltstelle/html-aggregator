@@ -6,6 +6,7 @@ const path = require('path')
 const fs = require('fs')
 const fse = require('fs-extra')
 const chokidar = require('chokidar')
+const matcher = require('picomatch')
 const server = require('live-server')
 
 const template = require('./template')
@@ -14,20 +15,19 @@ const configs = require('./configs')
 const files = require('./files')
 
 let procs = []
+let mappings = {}
 
 module.exports = {
     registerProcessor: registerProc,
-    run: function (file) {
-        return file ? runProc(file) : runAll()
-    },
-    processorFor: findProc
+    run: file => file ? runProcs(file) : runAll(),
+    processorsFor: findProcs
 }
 
-registerProc('Markdown', '\.(md|yml|yaml)$', markdown.run, {priority: -100})
+registerProc('Markdown', '**/*.(md|yml|yaml)', markdown.run, {priority: -100})
 
-registerProc('Template', '\.html$', template.run, {priority: -100})
+registerProc('Template', '**/*.html', template.run, {priority: -100})
 
-registerProc('Copy', '', input => Promise.resolve({data: input}), {format: 'binary', priority: -200})
+registerProc('Copy', '**/*', input => Promise.resolve({data: input}), {format: 'binary', priority: -200})
 
 function runAll(stats) {
     let ignore = ['node_modules/**', configs.args.outputDir + '/**'].concat(configs.args.exclude)
@@ -36,46 +36,55 @@ function runAll(stats) {
         nodir: true,
         ignore: ignore,
         statCache
-    }).then(files => runProcs(files, statCache))
+    }).then(files => run(files, statCache))
 
-    function runProcs(files, newStats) {
+    function run(files, newStats) {
         let changed = files.filter(file => {
             let absolute = process.cwd() + '/' + file
             let modified = !stats || !stats[absolute] || newStats[absolute].mtimeMs > stats[absolute].mtimeMs
-            return modified && !findProc(file).lastPass
+            return modified && findProcs(file, false).length > 0
         })
-        if (changed.length === 0) {
-            let lastPasses = files
-                .filter(file => findProc(file).lastPass)
-                .map(file => runProc(file))
-            return Promise.all(lastPasses).then(() => {
-                debug('Found no more changed resources')
-                if (configs.args.watch) {
-                    serve(configs.args.port, configs.args.reload)
-                    watch(ignore)
-                }
-            })
+        if (changed.length > 0) {
+            debug('%d changed resources found.', changed.length)
+            let procs = changed.map(file => runProcs(file, false))
+            return Promise.all(procs).then(() => runAll(newStats))
         }
-        debug('Found %d changed resources', changed.length)
-        let procs = changed.map(file => runProc(file))
-        return Promise.all(procs).then(() => runAll(newStats))
+        let lastPasses = files.map(file => runProcs(file, true))
+        return Promise.all(lastPasses).then(() => {
+            debug('No more changed resources found.')
+            if (configs.args.watch) {
+                serve(configs.args.port, configs.args.reload)
+                watch(ignore)
+            }
+        })
     }
 }
 
 function registerProc(name, test, exec, options) {
-    procs.push({name, test, exec, priority: 0, ...options})
+    procs.push({
+        name,
+        test: matcher(test),
+        exec,
+        priority: 0,
+        ...options,
+        underscoreFiles: (options && options.underscoreFiles) || hasUnderscore(test)
+    })
     procs.sort((a, b) => a.priority < b.priority ? 1 : a.priority > b.priority ? -1 : 0)
 }
 
-function runProc(file) {
-    //TODO fails on delete event
-    let proc = findProc(file)
-    let ignore = !proc.underscoreFiles && (file.substring(0, 1) === '_' || file.indexOf('/_') >= 0)
-    return ignore ? Promise.resolve('ignored') : execProc(proc, file)
+function findProcs(file, lastPass) {
+    return procs.filter(p => (lastPass === undefined ? true : lastPass === !!p.lastPass) && p.test(file))
 }
 
-function findProc(file) {
-    return procs.find(p => file.match(p.test))
+function runProcs(file, lastPass) {
+    return Promise.all(findProcs(file, lastPass).map(proc => {
+        let ignore = !proc.underscoreFiles && hasUnderscore(file)
+        return ignore ? Promise.resolve('ignored') : execProc(proc, file)
+    }))
+}
+
+function hasUnderscore(file) {
+    return file.substring(0, 1) === '_' || file.indexOf('/_') >= 0
 }
 
 function execProc(proc, file) {
@@ -91,13 +100,31 @@ function execProc(proc, file) {
             let outParts = path.parse(path.resolve(configs.args.outputDir, outPath))
             fse.mkdirsSync(outParts.dir)
             let outName = path.resolve(outParts.dir, outParts.name + (res.ext ? res.ext : outParts.ext))
-            fs.writeFileSync(outName, res.data)
+            if (res.data) {
+                fs.writeFileSync(outName, res.data)
+            }
+            addMapping(file, outName)
             debug(proc.name, chalk.blue(file), '->', chalk.green(path.relative('', outName)))
         })
         .catch(err => {
             debug(proc.name, chalk.blue(file), chalk.red(err))
             return Promise.reject(err)
         })
+}
+
+function addMapping(file, name) {
+    (mappings[file] = mappings[file] || []).push(name)
+}
+
+function remove(file) {
+    let names = mappings[file]
+    if (names) {
+        for (let i = 0; i < names.length; i++) {
+            fs.unlink(names[i], () => {
+            })
+        }
+        delete mappings[file]
+    }
 }
 
 function serve(port, reload) {
@@ -109,7 +136,7 @@ function serve(port, reload) {
         ignorePattern: reload < 0 ? '**/*' : undefined,
         open: false
     })
-    debug('Serving at', chalk.blue.underline('http://localhost:' + port))
+    debug('Serving at', chalk.blue.underline(`http://localhost: ${port}`))
 }
 
 function watch(ignore) {
@@ -119,6 +146,8 @@ function watch(ignore) {
         ignored: ignored
     })
         .on('ready', () => debug('Watching for changes...'))
-        .on('all', (event, file) => runProc(file))
+        .on('add', file => runProcs(file))
+        .on('change', file => runProcs(file))
+        .on('unlink', file => remove(file))
         .on('error', err => debug(err))
 }

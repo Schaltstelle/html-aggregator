@@ -7,8 +7,7 @@ const yaml = require('./yaml')
 const template = require('./template')
 
 module.exports = {
-    run,
-    load
+    run, load
 }
 
 function run(input, data) {
