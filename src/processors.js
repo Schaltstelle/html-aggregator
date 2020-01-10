@@ -19,6 +19,7 @@ let mappings = {}
 
 module.exports = {
     registerProcessor: registerProc,
+    pipeline,
     run: file => file ? runProcs(file) : runAll(),
     processorsFor: findProcs
 }
@@ -73,6 +74,12 @@ function runAll(stats) {
  *  single: this processor runs only if no other processor run before on the file
  */
 function registerProc(name, test, exec, options) {
+    if (!test) {
+        test = name.test
+        exec = name.exec
+        options = name.options
+        name = name.name
+    }
     procs.push({
         name,
         test: matcher(test),
@@ -82,6 +89,26 @@ function registerProc(name, test, exec, options) {
         underscoreFiles: (options && options.underscoreFiles) || hasUnderscore(test)
     })
     procs.sort((a, b) => a.priority < b.priority ? 1 : a.priority > b.priority ? -1 : 0)
+}
+
+function pipeline(name, test, dest, plugins) {
+    return {name, test, exec, options: {format: 'file'}}
+
+    function exec(input) {
+        let p = destPlugin(0)(input)
+        for (let i = 1; i < plugins.length; i++) {
+            p = p.then(res => Promise.all(res.files.map(file => destPlugin(i)(file))).then(flattenFiles))
+        }
+        return p
+    }
+
+    function flattenFiles(files) {
+        return {files: files.reduce((acc, val) => acc.concat(val.files), [])}
+    }
+
+    function destPlugin(i) {
+        return plugins[i](i === plugins.length - 1 ? dest : `_work/pipeline/${name}-${i + 1}`)
+    }
 }
 
 function findProcs(file, lastPass) {
@@ -107,20 +134,24 @@ function execProc(proc, file) {
     return files.readFileWithFormat(file, proc.format || 'text')
         .then(data => proc.exec(data))
         .then(res => {
-            let outPath = file
-            if (res.path) {
-                outPath = res.path.substring(res.path.length - 1) === '/'
-                    ? res.path + path.parse(file).base
-                    : res.path
-            }
-            let outParts = path.parse(path.resolve(configs.args.outputDir, outPath))
-            fse.mkdirsSync(outParts.dir)
-            let outName = path.resolve(outParts.dir, outParts.name + (res.ext ? res.ext : outParts.ext))
-            if (res.data) {
+            let outName = res.files
+            if (!res.files) {
+                let outPath = file
+                if (res.path) {
+                    outPath = res.path.substring(res.path.length - 1) === '/'
+                        ? res.path + path.parse(file).base
+                        : res.path
+                }
+                let outParts = path.parse(path.resolve(configs.args.outputDir, outPath))
+                fse.mkdirsSync(outParts.dir)
+                outName = path.resolve(outParts.dir, outParts.name + (res.ext ? res.ext : outParts.ext))
                 fs.writeFileSync(outName, res.data)
             }
+            if (!outName.map) {
+                outName = [outName]
+            }
             addMapping(file, outName)
-            debug(proc.name, chalk.blue(file), '->', chalk.green(path.relative('', outName)))
+            debug(proc.name, chalk.blue(file), '->', chalk.green(outName.map(name => path.relative('', name))))
         })
         .catch(err => {
             debug(proc.name, chalk.blue(file), chalk.red(err))
@@ -129,7 +160,7 @@ function execProc(proc, file) {
 }
 
 function addMapping(file, name) {
-    (mappings[file] = mappings[file] || []).push(name)
+    mappings[file] = (mappings[file] || []).concat(name)
 }
 
 function remove(file) {

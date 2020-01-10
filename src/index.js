@@ -22,7 +22,8 @@ module.exports = {
     processorsFor: procs.processorsFor,
     registerHelper: chaining(template.registerHelper),
     registerProcessor: chaining(procs.registerProcessor),
-    registerTag: chaining(yaml.registerTag)
+    registerTag: chaining(yaml.registerTag),
+    pipeline: procs.pipeline
 }
 
 function chaining(func) {
